@@ -1,0 +1,25 @@
+# ---------------------------------------------------------------------------
+# Routing rules: which Kinesis stream / S3 prefix an event should be routed
+# to, keyed by source name. Referenced by the publisher and storage layers.
+# ---------------------------------------------------------------------------
+routing:
+
+  mes:
+    stream: mes
+    raw_bucket: semiconductor-landing
+    raw_prefix: mes
+
+  erp:
+    stream: metadata
+    raw_bucket: semiconductor-landing
+    raw_prefix: erp
+
+  equipment:
+    stream: quality
+    raw_bucket: semiconductor-landing
+    raw_prefix: equipment
+
+  plm:
+    stream: plm
+    raw_bucket: semiconductor-landing
+    raw_prefix: plm

@@ -1,0 +1,24 @@
+aws:
+  region: ${AWS_REGION:us-east-1}
+  endpoint_url: ${AWS_ENDPOINT_URL:http://localstack:4566}
+  access_key_id: ${AWS_ACCESS_KEY_ID:test}
+  secret_access_key: ${AWS_SECRET_ACCESS_KEY:test}
+
+  s3:
+    landing_bucket: ${S3_LANDING_BUCKET:semiconductor-landing}
+    raw_prefix: raw
+    use_path_style: true
+
+  kinesis:
+    streams:
+      mes: ${KINESIS_MES_STREAM:mes-events}
+      metadata: ${KINESIS_METADATA_STREAM:metadata-events}
+      quality: ${KINESIS_QUALITY_STREAM:quality-events}
+    shard_count: 1
+
+  secrets_manager:
+    prefix: sap/
+
+  cloudwatch:
+    log_group: /sap/ingestion-service
+    log_stream: application

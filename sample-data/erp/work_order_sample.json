@@ -1,0 +1,7 @@
+{
+  "eventType": "WORK_ORDER_CREATED",
+  "workOrderId": "WO-2026-1001",
+  "plant": "FAB-01",
+  "priority": "HIGH",
+  "timestamp": "2026-07-15T10:30:00Z"
+}

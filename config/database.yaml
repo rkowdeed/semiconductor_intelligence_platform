@@ -1,0 +1,15 @@
+database:
+  driver: postgresql+psycopg2
+  host: ${POSTGRES_HOST:postgres}
+  port: ${POSTGRES_PORT:5432}
+  name: ${POSTGRES_DB:semiconductor}
+  user: ${POSTGRES_USER:sap_user}
+  password: ${POSTGRES_PASSWORD:sap_password}
+  pool_size: 10
+  max_overflow: 20
+  pool_pre_ping: true
+  echo: false
+  schemas:
+    - mdm
+    - metadata
+    - quality

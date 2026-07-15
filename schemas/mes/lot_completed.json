@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap.local/schemas/mes/lot_completed.json",
+  "title": "MES Lot Completed Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "eventType",
+    "lotId",
+    "recipeId",
+    "equipmentId",
+    "waferCount",
+    "temperature",
+    "timestamp"
+  ],
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "enum": ["LOT_COMPLETED"]
+    },
+    "lotId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "recipeId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "equipmentId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "waferCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 500
+    },
+    "temperature": {
+      "type": "number"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

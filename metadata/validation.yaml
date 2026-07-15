@@ -1,0 +1,24 @@
+# ---------------------------------------------------------------------------
+# Validation policy per source.
+# ---------------------------------------------------------------------------
+validation:
+
+  mes:
+    schema: schemas/mes/lot_completed.json
+    fail_fast: true
+    on_failure_status_code: 400
+
+  erp:
+    schema: schemas/erp/work_order.json
+    fail_fast: true
+    on_failure_status_code: 400
+
+  equipment:
+    schema: schemas/equipment/equipment_event.json
+    fail_fast: true
+    on_failure_status_code: 400
+
+  plm:
+    schema: schemas/plm/product_lifecycle_event.json
+    fail_fast: true
+    on_failure_status_code: 400

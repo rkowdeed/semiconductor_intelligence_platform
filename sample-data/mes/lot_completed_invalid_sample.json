@@ -1,0 +1,7 @@
+{
+  "eventType": "LOT_COMPLETED",
+  "lotId": "LOT10002",
+  "recipeId": "REC100",
+  "waferCount": "twenty-five",
+  "timestamp": "not-a-timestamp"
+}

@@ -1,0 +1,122 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: sap-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-semiconductor}
+      POSTGRES_USER: ${POSTGRES_USER:-sap_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sap_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sap_user} -d ${POSTGRES_DB:-semiconductor}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - sap-network
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: sap-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@sap.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - sap-network
+
+  localstack:
+    image: localstack/localstack:3.7
+    container_name: sap-localstack
+    restart: unless-stopped
+    environment:
+      SERVICES: s3,kinesis,cloudwatch,secretsmanager
+      DEBUG: 0
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+      PERSISTENCE: 0
+    ports:
+      - "4566:4566"
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./infrastructure/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    networks:
+      - sap-network
+
+  ingestion-service:
+    build:
+      context: .
+      dockerfile: infrastructure/docker/Dockerfile
+    container_name: sap-ingestion-service
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-sap_user}:${POSTGRES_PASSWORD:-sap_password}@postgres:5432/${POSTGRES_DB:-semiconductor}
+      AWS_ENDPOINT_URL: http://localstack:4566
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - sap-network
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: sap-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./infrastructure/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - ingestion-service
+    networks:
+      - sap-network
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: sap-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - sap-network
+
+networks:
+  sap-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  localstack_data:

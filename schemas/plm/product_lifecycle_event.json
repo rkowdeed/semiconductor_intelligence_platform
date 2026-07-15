@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap.local/schemas/plm/product_lifecycle_event.json",
+  "title": "PLM Product Lifecycle Event",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["eventType", "changeOrderId", "partNumber", "lifecycleState", "timestamp"],
+  "properties": {
+    "eventType": { "type": "string", "enum": ["ECO_RELEASED", "ECR_SUBMITTED", "BOM_UPDATED"] },
+    "changeOrderId": { "type": "string" },
+    "partNumber": { "type": "string" },
+    "lifecycleState": { "type": "string", "enum": ["DESIGN", "RELEASED", "OBSOLETE"] },
+    "owner": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" }
+  }
+}

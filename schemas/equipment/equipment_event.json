@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap.local/schemas/equipment/equipment_event.json",
+  "title": "Equipment Event",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["eventType", "equipmentId", "timestamp"],
+  "properties": {
+    "eventType": { "type": "string" },
+    "equipmentId": { "type": "string" },
+    "timestamp": { "type": "string", "format": "date-time" }
+  }
+}

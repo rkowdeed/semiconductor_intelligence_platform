@@ -1,0 +1,21 @@
+# ---------------------------------------------------------------------------
+# Kinesis stream definitions. Used at LocalStack bootstrap time and by the
+# KinesisPublisher to resolve logical stream names -> physical stream names.
+# ---------------------------------------------------------------------------
+streams:
+
+  mes:
+    name: mes-events
+    shard_count: 1
+
+  metadata:
+    name: metadata-events
+    shard_count: 1
+
+  quality:
+    name: quality-events
+    shard_count: 1
+
+  plm:
+    name: plm-events
+    shard_count: 1

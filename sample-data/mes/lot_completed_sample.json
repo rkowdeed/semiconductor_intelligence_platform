@@ -1,0 +1,9 @@
+{
+  "eventType": "LOT_COMPLETED",
+  "lotId": "LOT10001",
+  "recipeId": "REC100",
+  "equipmentId": "ETCH001",
+  "waferCount": 25,
+  "temperature": 47.8,
+  "timestamp": "2026-07-15T10:30:00Z"
+}

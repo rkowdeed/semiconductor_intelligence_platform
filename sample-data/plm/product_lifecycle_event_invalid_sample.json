@@ -1,0 +1,7 @@
+{
+  "eventType": "ECO_RELEASED",
+  "changeOrderId": "ECO-2026-0042",
+  "partNumber": "PN-AX12-9001",
+  "lifecycleState": "IN_REVIEW",
+  "timestamp": "bad-timestamp"
+}

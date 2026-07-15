@@ -1,0 +1,58 @@
+# ---------------------------------------------------------------------------
+# Source registry - the single source of truth for onboarding new sources.
+# Adding a new source requires ONLY a new entry here (plus a schema file and
+# an optional mapping/table) - no code changes.
+# ---------------------------------------------------------------------------
+sources:
+
+  mes:
+    display_name: Manufacturing Execution System
+    endpoint: /mes/events
+    method: POST
+    type: REST
+    schema: schemas/mes/lot_completed.json
+    target_table: lot_master
+    target_schema: mdm
+    stream: mes
+    raw_bucket: semiconductor-landing
+    raw_prefix: mes
+    enabled: true
+
+  erp:
+    display_name: Enterprise Resource Planning
+    endpoint: /erp/events
+    method: POST
+    type: REST
+    schema: schemas/erp/work_order.json
+    target_table: raw_events
+    target_schema: metadata
+    stream: metadata
+    raw_bucket: semiconductor-landing
+    raw_prefix: erp
+    enabled: true
+
+  equipment:
+    display_name: Equipment / SECS-GEM Gateway
+    endpoint: /equipment/events
+    method: POST
+    type: REST
+    schema: schemas/equipment/equipment_event.json
+    target_table: raw_events
+    target_schema: metadata
+    stream: quality
+    raw_bucket: semiconductor-landing
+    raw_prefix: equipment
+    enabled: true
+
+  plm:
+    display_name: Product Lifecycle Management
+    endpoint: /plm/events
+    method: POST
+    type: REST
+    schema: schemas/plm/product_lifecycle_event.json
+    target_table: raw_events
+    target_schema: metadata
+    stream: plm
+    raw_bucket: semiconductor-landing
+    raw_prefix: plm
+    enabled: true

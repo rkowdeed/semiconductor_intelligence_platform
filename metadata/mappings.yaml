@@ -1,0 +1,16 @@
+# ---------------------------------------------------------------------------
+# Field-level mapping from source payload fields -> curated table columns.
+# Used by the generic curation step so no source-specific code is required.
+# ---------------------------------------------------------------------------
+mappings:
+
+  mes:
+    target_table: lot_master
+    fields:
+      lotId: lot_id
+      recipeId: recipe_id
+      equipmentId: equipment_id
+      waferCount: wafer_count
+      temperature: temperature
+      eventType: event_type
+      timestamp: event_timestamp

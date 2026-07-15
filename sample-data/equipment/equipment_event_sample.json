@@ -1,0 +1,7 @@
+{
+  "eventType": "TOOL_STATUS_CHANGED",
+  "equipmentId": "ETCH-TOOL-01",
+  "status": "IDLE",
+  "chamber": "CH-2",
+  "timestamp": "2026-07-15T10:35:00Z"
+}

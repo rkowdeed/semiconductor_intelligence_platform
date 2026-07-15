@@ -1,0 +1,5 @@
+{
+  "eventType": "WORK_ORDER_CREATED",
+  "workOrderId": 1001,
+  "timestamp": "invalid-date"
+}

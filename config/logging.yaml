@@ -1,0 +1,11 @@
+logging:
+  level: ${LOG_LEVEL:INFO}
+  format: json
+  fields:
+    - request_id
+    - source
+    - stream
+    - timestamp
+    - status
+    - duration
+  renderer: structlog.processors.JSONRenderer
