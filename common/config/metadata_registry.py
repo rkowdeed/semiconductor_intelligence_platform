@@ -20,6 +20,7 @@ class SourceDefinition:
     endpoint: str
     method: str
     type: str
+    input_format: str
     schema: str
     target_table: str
     target_schema: str
@@ -52,6 +53,7 @@ class MetadataRegistry:
                     endpoint=cfg["endpoint"],
                     method=cfg.get("method", "POST"),
                     type=cfg.get("type", "REST"),
+                    input_format=cfg.get("input_format", "AUTO"),
                     schema=cfg["schema"],
                     target_table=cfg["target_table"],
                     target_schema=cfg.get("target_schema", "metadata"),

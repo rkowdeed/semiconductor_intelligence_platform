@@ -44,29 +44,58 @@ Why this matters in semiconductor manufacturing:
 
 ## Architecture
 
+### Runtime Data Flow (API Ingestion)
+
+```mermaid
+flowchart TD
+    A[Client Request\nJSON or XML/CSV/TEXT/etc] --> B[Dynamic Source Route\nmetadata/sources.yaml]
+    B --> C[Format Parser Registry\nContent-Type + source input_format]
+    C --> D[Canonical JSON Object]
+    D --> E[JSON Schema Validation\nschemas/<source>/*.json]
+    E -->|Invalid| F[HTTP 400 ValidationException]
+    E -->|Valid| G[Persist Raw Payload to S3]
+    G --> H[Publish Event to Kinesis]
+    H --> I[Curate into PostgreSQL]
+    I --> J[Write Audit Log]
+    J --> K[HTTP 202 Accepted]
 ```
-Incoming REST Request
-      │
-      ▼
-Load metadata (metadata/sources.yaml)
-      │
-      ▼
-Load JSON Schema (schemas/<source>/*.json)
-      │
-      ▼
-Validate payload  ───► 400 on failure
-      │
-      ▼
-Persist raw payload to S3 (LocalStack)
-      │
-      ▼
-Publish event to Kinesis (LocalStack)
-      │
-      ▼
-Insert curated record into PostgreSQL
-      │
-      ▼
-Return HTTP 202 Accepted
+
+### Offline/Batch Data Flow (S3 File Normalization Worker)
+
+```mermaid
+flowchart TD
+    A[S3 Raw Files\nxml/csv/txt/parquet/hdf5/etc] --> B[scripts/normalize_s3_files.py]
+    B --> C[S3NormalizationService]
+    C --> D[Format Parser Registry\nby extension + fallback format]
+    D --> E[Canonical JSON]
+    E --> F[Write normalized/*.json to S3]
+```
+
+### Sequence Diagram (Request Path)
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant R as FastAPI Route
+    participant P as Format Parser Registry
+    participant V as Schema Validator
+    participant S as S3
+    participant K as Kinesis
+    participant D as PostgreSQL
+
+    C->>R: POST /api/v1/<source>/events\n(Content-Type + body)
+    R->>P: parse_with_format(raw_body, content_type, input_format)
+    P-->>R: canonical JSON payload
+    R->>V: validate(payload, source.schema)
+    alt validation fails
+        V-->>R: ValidationException
+        R-->>C: HTTP 400
+    else validation passes
+        R->>S: put_raw_payload(payload)
+        R->>K: publish(payload)
+        R->>D: insert curated record + audit log
+        R-->>C: HTTP 202 Accepted
+    end
 ```
 
 ## Technology Stack
@@ -107,7 +136,7 @@ Semiconductor_Operations_Data_Platform/
 │                              # models, validation, storage, aws, repository, utils)
 ├── ingestion-service/        # the FastAPI service
 ├── alembic/                  # optional migration-driven schema management
-├── tests/                    # pytest suite (53 tests)
+├── tests/                    # pytest suite (59 tests)
 └── docs/
 ```
 
@@ -289,7 +318,7 @@ pip install -r requirements.txt --break-system-packages
 pytest
 ```
 
-53 tests cover: schema validation, the REST API (happy path + validation
+59 tests cover: schema validation, the REST API (happy path + validation
 failure + malformed JSON), the Repository Pattern, the Kinesis publisher, S3
 upload, and the configuration loader.
 
@@ -335,7 +364,7 @@ Every request is logged as a single JSON line (via `structlog`) containing
 - [x] Event published to the `mes-events` Kinesis stream
 - [x] Curated record persisted to PostgreSQL (`mdm.lot_master`)
 - [x] Structured JSON logs + passing `/api/v1/health`
-- [x] Full `pytest` suite passes (53/53)
+- [x] Full `pytest` suite passes (59/59)
 
 ## Future Compatibility
 

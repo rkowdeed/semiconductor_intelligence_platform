@@ -193,3 +193,39 @@ def test_post_malformed_json_returns_400(client: TestClient) -> None:
         headers={"Content-Type": "application/json"},
     )
     assert response.status_code == 400
+
+
+def test_post_xml_body_is_converted_before_ingestion(client: TestClient) -> None:
+    from api.dependencies import get_ingestion_service
+    from main import app
+
+    captured: dict[str, object] = {}
+
+    class _FakeResult:
+        request_id = "req-xml"
+        source = "mes"
+        s3_key = "mes/2026/07/20/mes-req-xml.json"
+        stream = "mes-events"
+        sequence_number = "1"
+        curated_record_id = "1"
+
+    class _FakeIngestionService:
+        def ingest(self, source_name, raw_body, session):
+            captured["source_name"] = source_name
+            captured["raw_body"] = raw_body
+            return _FakeResult()
+
+    app.dependency_overrides[get_ingestion_service] = lambda: _FakeIngestionService()
+    try:
+        xml_payload = b"<mes><eventType>LOT_COMPLETED</eventType><lotId>LOT10001</lotId></mes>"
+        response = client.post(
+            "/api/v1/mes/events",
+            content=xml_payload,
+            headers={"Content-Type": "application/xml"},
+        )
+        assert response.status_code == 202
+        assert captured["source_name"] == "mes"
+        assert isinstance(captured["raw_body"], dict)
+        assert "mes" in captured["raw_body"]
+    finally:
+        app.dependency_overrides.pop(get_ingestion_service, None)

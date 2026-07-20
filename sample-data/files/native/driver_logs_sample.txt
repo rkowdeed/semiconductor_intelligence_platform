@@ -1,0 +1,2 @@
+2026-07-20T10:22:00Z driver initialized
+2026-07-20T10:22:05Z device heartbeat ok

@@ -7,6 +7,8 @@ param(
     [string]$DbUser = "sap_user",
     [string]$DbName = "semiconductor",
     [string]$DbTable = "mdm.lot_master",
+    [string]$NormalizeSourcePrefix = "files/native",
+    [string]$NormalizeOutputPrefix = "files/native/normalized",
     [switch]$IngestSample,
     [switch]$IngestAllSamples
 )
@@ -97,7 +99,23 @@ function Get-ExecutedCommand {
     if ($IngestAllSamples) {
         $cmd += " -IngestAllSamples"
     }
+    if ($NormalizeSourcePrefix -ne "files/native") {
+        $cmd += " -NormalizeSourcePrefix `"$NormalizeSourcePrefix`""
+    }
+    if ($NormalizeOutputPrefix -ne "files/native/normalized") {
+        $cmd += " -NormalizeOutputPrefix `"$NormalizeOutputPrefix`""
+    }
     return $cmd
+}
+
+function Get-PythonCommand {
+    if ($env:VIRTUAL_ENV) {
+        $venvPython = Join-Path $env:VIRTUAL_ENV "Scripts/python.exe"
+        if (Test-Path -Path $venvPython) {
+            return $venvPython
+        }
+    }
+    return "python"
 }
 
 function Write-VerificationReport {
@@ -201,6 +219,74 @@ if ($IngestAllSamples) {
         catch {
             Add-Result -Name "Sample ingestion ($($source.Name))" -Passed $false -Details $_.Exception.Message
         }
+    }
+}
+
+if ($IngestAllSamples) {
+    try {
+        $pythonCmd = Get-PythonCommand
+        $uploadScript = @"
+from pathlib import Path
+import boto3
+
+bucket = r"$Bucket"
+prefix = r"$NormalizeSourcePrefix".strip("/")
+
+files = [
+    r"sample-data/files/native/system_health_sample.xml",
+    r"sample-data/files/native/work_orders_sample.csv",
+    r"sample-data/files/native/driver_logs_sample.txt",
+    r"sample-data/files/native/benchmark_sample.parquet",
+]
+
+s3 = boto3.client(
+    "s3",
+    endpoint_url="http://localhost:4566",
+    region_name="us-east-1",
+    aws_access_key_id="test",
+    aws_secret_access_key="test",
+)
+
+for rel in files:
+    path = Path(rel)
+    if not path.exists():
+        raise FileNotFoundError(f"Native sample not found: {path}")
+    key = f"{prefix}/{path.name}" if prefix else path.name
+    s3.put_object(Bucket=bucket, Key=key, Body=path.read_bytes())
+
+print(f"uploaded={len(files)}")
+"@
+
+        Invoke-Step -StepName "Upload native files to S3" -Command {
+            & $pythonCmd -c $uploadScript
+        } | Out-Null
+
+        $env:AWS_ENDPOINT_URL = "http://localhost:4566"
+        $env:AWS_REGION = "us-east-1"
+        $env:AWS_ACCESS_KEY_ID = "test"
+        $env:AWS_SECRET_ACCESS_KEY = "test"
+
+        Invoke-Step -StepName "Run S3 normalization script" -Command {
+            & $pythonCmd "scripts/normalize_s3_files.py" --source file_multiformat --bucket $Bucket --source-prefix $NormalizeSourcePrefix --normalized-prefix $NormalizeOutputPrefix --format AUTO
+        } | Out-Null
+
+        $normalizedListRaw = Invoke-Step -StepName "List normalized objects" -Command {
+            docker compose exec -T localstack awslocal s3 ls "s3://$Bucket/$NormalizeOutputPrefix/" --recursive
+        }
+
+        $normalizedLines = @($normalizedListRaw -split "`r?`n" | Where-Object { $_.Trim().Length -gt 0 })
+        $normalizedCount = 0
+        foreach ($line in $normalizedLines) {
+            $parts = $line -split "\s+", 4
+            if ($parts.Count -ge 4 -and $parts[3].EndsWith(".json")) {
+                $normalizedCount++
+            }
+        }
+
+        Add-Result -Name "Native normalization" -Passed ($normalizedCount -ge 4) -Details "Normalized $normalizedCount JSON object(s) under $NormalizeOutputPrefix"
+    }
+    catch {
+        Add-Result -Name "Native normalization" -Passed $false -Details $_.Exception.Message
     }
 }
 

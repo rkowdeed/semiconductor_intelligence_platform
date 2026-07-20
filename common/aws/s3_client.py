@@ -78,6 +78,51 @@ class S3Client:
         logger.info("s3_upload_success", bucket=bucket, key=key)
         return key
 
+    def put_json_payload(self, bucket: str, key: str, payload: dict[str, Any]) -> str:
+        try:
+            self._client.put_object(
+                Bucket=bucket,
+                Key=key,
+                Body=json.dumps(payload).encode("utf-8"),
+                ContentType="application/json",
+            )
+        except (ClientError, BotoCoreError) as exc:
+            raise StorageException(f"Failed to upload JSON to s3://{bucket}/{key}: {exc}") from exc
+
+        logger.info("s3_upload_success", bucket=bucket, key=key)
+        return key
+
+    def get_object_bytes(self, bucket: str, key: str) -> bytes:
+        try:
+            response = self._client.get_object(Bucket=bucket, Key=key)
+            return response["Body"].read()
+        except (ClientError, BotoCoreError) as exc:
+            raise StorageException(f"Failed to read s3://{bucket}/{key}: {exc}") from exc
+
+    def list_object_keys(self, bucket: str, prefix: str) -> list[str]:
+        keys: list[str] = []
+        continuation_token: str | None = None
+
+        try:
+            while True:
+                kwargs: dict[str, Any] = {"Bucket": bucket, "Prefix": prefix}
+                if continuation_token:
+                    kwargs["ContinuationToken"] = continuation_token
+
+                response = self._client.list_objects_v2(**kwargs)
+                for obj in response.get("Contents", []):
+                    key = obj.get("Key")
+                    if key:
+                        keys.append(key)
+
+                if not response.get("IsTruncated"):
+                    break
+                continuation_token = response.get("NextContinuationToken")
+        except (ClientError, BotoCoreError) as exc:
+            raise StorageException(f"Failed to list objects for s3://{bucket}/{prefix}: {exc}") from exc
+
+        return keys
+
     def object_exists(self, bucket: str, key: str) -> bool:
         try:
             self._client.head_object(Bucket=bucket, Key=key)

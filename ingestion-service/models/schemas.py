@@ -43,6 +43,7 @@ class SourceInfo(BaseModel):
     endpoint: str
     method: str
     type: str
+    input_format: str
     schema_path: str = Field(alias="schema")
     target_table: str
     target_schema: str

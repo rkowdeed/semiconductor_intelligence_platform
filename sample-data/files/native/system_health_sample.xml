@@ -1,0 +1,6 @@
+<health>
+  <host>ingestion-node-01</host>
+  <status>UP</status>
+  <cpuPct>38.4</cpuPct>
+  <memoryPct>62.1</memoryPct>
+</health>

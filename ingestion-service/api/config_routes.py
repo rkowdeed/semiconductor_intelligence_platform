@@ -21,6 +21,7 @@ def list_sources(registry: MetadataRegistry = Depends(get_metadata_registry)) ->
             endpoint=s.endpoint,
             method=s.method,
             type=s.type,
+            input_format=s.input_format,
             schema=s.schema,
             target_table=s.target_table,
             target_schema=s.target_schema,

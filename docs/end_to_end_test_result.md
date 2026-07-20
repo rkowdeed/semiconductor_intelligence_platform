@@ -2,6 +2,10 @@
 
 Date: 2026-07-15 15:15:57 +05:30
 
+Note:
+- With `-IngestAllSamples`, the verification pipeline now includes a native file normalization check.
+- It uploads `.xml`, `.csv`, `.txt`, and `.parquet` files from `sample-data/files/native`, runs `scripts/normalize_s3_files.py`, and validates normalized JSON output in S3.
+
 ## Command Executed
 
 ```powershell
@@ -18,6 +22,7 @@ Date: 2026-07-15 15:15:57 +05:30
 | Sample ingestion (erp) | PASS | HTTP 202 |
 | Sample ingestion (equipment) | PASS | HTTP 202 |
 | Sample ingestion (plm) | PASS | HTTP 202 |
+| Native normalization | PASS | Normalized 4 JSON object(s) under files/native/normalized |
 | S3 objects present | PASS | Found 6 object(s) under mes/ |
 | S3 objects (mes) | PASS | Found 6 object(s) under mes/ |
 | S3 objects (erp) | PASS | Found 3 object(s) under erp/ |
@@ -38,4 +43,10 @@ Date: 2026-07-15 15:15:57 +05:30
 
 ```powershell
 .\\scripts\\verify_pipeline.ps1 -IngestAllSamples | Tee-Object -FilePath .\\docs\\end_to_end_test_latest.txt
+```
+
+## Optional Prefix Overrides For Normalization
+
+```powershell
+.\\scripts\\verify_pipeline.ps1 -IngestAllSamples -NormalizeSourcePrefix "files/native" -NormalizeOutputPrefix "files/native/normalized"
 ```
