@@ -88,3 +88,132 @@ def sample_plm_payload() -> dict:
         "owner": "eng_lead",
         "timestamp": "2026-07-15T10:40:00Z",
     }
+
+
+@pytest.fixture
+def sample_file_json_payload() -> dict:
+    return {
+        "eventType": "FILE_INGESTED",
+        "timestamp": "2026-07-20T08:00:00Z",
+        "metadata": {
+            "sourceSystem": "supplier_portal",
+            "fileName": "supplier_orders.json",
+            "fileType": "JSON",
+            "structure": "ARRAY",
+            "contentVersion": "v1.0",
+        },
+        "file": {
+            "content": [
+                {"orderId": "SO-100", "quantity": 25, "priority": "HIGH"},
+                {"orderId": "SO-101", "quantity": 10, "priority": "LOW"},
+            ]
+        },
+    }
+
+
+@pytest.fixture
+def sample_file_csv_payload() -> dict:
+    return {
+        "eventType": "FILE_INGESTED",
+        "timestamp": "2026-07-20T08:05:00Z",
+        "metadata": {
+            "sourceSystem": "erp_bulk",
+            "fileName": "work_orders.csv",
+            "fileType": "CSV",
+            "structure": "ROW_BASED",
+            "contentVersion": "v2.1",
+        },
+        "file": {
+            "delimiter": ",",
+            "hasHeader": True,
+            "columns": ["workOrderId", "plant", "priority"],
+            "rows": [
+                ["WO-1", "FAB-01", "HIGH"],
+                ["WO-2", "FAB-02", "MEDIUM"],
+            ],
+        },
+    }
+
+
+@pytest.fixture
+def sample_file_xml_payload() -> dict:
+    return {
+        "eventType": "FILE_INGESTED",
+        "timestamp": "2026-07-20T08:10:00Z",
+        "metadata": {
+            "sourceSystem": "quality_gateway",
+            "fileName": "tool_events.xml",
+            "fileType": "XML",
+            "structure": "DOCUMENT",
+            "contentVersion": "v3",
+        },
+        "file": {
+            "rootTag": "ToolEvents",
+            "namespaces": {
+                "q": "https://example.org/quality"
+            },
+            "records": [
+                {"toolId": "ETCH-1", "status": "IDLE"},
+                {"toolId": "ETCH-2", "status": "RUNNING"},
+            ],
+        },
+    }
+
+
+@pytest.fixture
+def invalid_file_csv_payload() -> dict:
+    return {
+        "eventType": "FILE_INGESTED",
+        "timestamp": "2026-07-20T08:05:00Z",
+        "metadata": {
+            "sourceSystem": "erp_bulk",
+            "fileName": "work_orders.txt",
+            "fileType": "CSV",
+            "structure": "ROW_BASED",
+            "contentVersion": "1.0",
+        },
+        "file": {
+            "delimiter": ",",
+            "hasHeader": True,
+            "columns": [],
+            "rows": [],
+        },
+    }
+
+
+@pytest.fixture
+def sample_file_multiformat_payload() -> dict:
+    return {
+        "eventType": "FILE_INGESTED",
+        "timestamp": "2026-07-20T09:00:00Z",
+        "metadata": {
+            "sourceSystem": "fab_gateway",
+            "fileName": "fab_equipment.stdf",
+            "category": "manufacturing",
+            "format": "STDF",
+            "contentVersion": "v1.0",
+        },
+        "file": {
+            "contentEncoding": "BASE64",
+            "content": "U1RERl9EQVRBX1NBUkxJTkVfMQ==",
+        },
+    }
+
+
+@pytest.fixture
+def invalid_file_multiformat_payload() -> dict:
+    return {
+        "eventType": "FILE_INGESTED",
+        "timestamp": "2026-07-20T09:00:00Z",
+        "metadata": {
+            "sourceSystem": "fab_gateway",
+            "fileName": "fab_equipment.stdf",
+            "category": "manufacturing",
+            "format": "Kafka",
+            "contentVersion": "v1.0",
+        },
+        "file": {
+            "contentEncoding": "BASE64",
+            "content": "U1RERl9EQVRBX1NBUkxJTkVfMQ==",
+        },
+    }

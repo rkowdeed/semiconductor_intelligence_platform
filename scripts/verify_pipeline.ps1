@@ -71,7 +71,7 @@ function Add-Result {
     })
 }
 
-function Exec-Cmd {
+function Invoke-Step {
     param(
         [scriptblock]$Command,
         [string]$StepName
@@ -89,7 +89,7 @@ function Exec-Cmd {
     }
 }
 
-function Build-ExecutedCommand {
+function Get-ExecutedCommand {
     $cmd = ".\\scripts\\verify_pipeline.ps1"
     if ($IngestSample) {
         $cmd += " -IngestSample"
@@ -106,7 +106,7 @@ function Write-VerificationReport {
     )
 
     $reportPath = Join-Path $repoRoot "docs/end_to_end_test_result.md"
-    $executedCommand = Build-ExecutedCommand
+    $executedCommand = Get-ExecutedCommand
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss zzz"
 
     $lines = New-Object System.Collections.Generic.List[string]
@@ -143,7 +143,7 @@ function Write-VerificationReport {
 }
 
 try {
-    $composePs = Exec-Cmd -StepName "docker compose ps" -Command { docker compose ps --format json }
+    Invoke-Step -StepName "docker compose ps" -Command { docker compose ps --format json } | Out-Null
     Add-Result -Name "Docker Compose reachable" -Passed $true -Details "docker compose is available"
 }
 catch {
@@ -151,7 +151,7 @@ catch {
 }
 
 try {
-    $statusCode = Exec-Cmd -StepName "API readiness" -Command {
+    $statusCode = Invoke-Step -StepName "API readiness" -Command {
         curl.exe -sS -o NUL -w "%{http_code}" "$ApiBaseUrl/ready"
     }
     Add-Result -Name "API readiness" -Passed ($statusCode -eq "200") -Details "HTTP $statusCode"
@@ -173,7 +173,7 @@ if ($IngestSample) {
             throw "Payload file not found at path: $payloadToUse"
         }
 
-        $ingestCode = Exec-Cmd -StepName "Sample ingestion" -Command {
+        $ingestCode = Invoke-Step -StepName "Sample ingestion" -Command {
             curl.exe -sS -o NUL -w "%{http_code}" -X POST "$ApiBaseUrl/mes/events" -H "Content-Type: application/json" --data-binary "@$payloadToUse"
         }
 
@@ -192,7 +192,7 @@ if ($IngestAllSamples) {
                 throw "Payload file not found at path: $payloadToUse"
             }
 
-            $ingestCode = Exec-Cmd -StepName "Sample ingestion for $($source.Name)" -Command {
+            $ingestCode = Invoke-Step -StepName "Sample ingestion for $($source.Name)" -Command {
                 curl.exe -sS -o NUL -w "%{http_code}" -X POST "$ApiBaseUrl/$($source.Endpoint)" -H "Content-Type: application/json" --data-binary "@$payloadToUse"
             }
 
@@ -205,11 +205,11 @@ if ($IngestAllSamples) {
 }
 
 try {
-    Exec-Cmd -StepName "S3 bucket check" -Command {
+    Invoke-Step -StepName "S3 bucket check" -Command {
         docker compose exec -T localstack awslocal s3api head-bucket --bucket $Bucket
     } | Out-Null
 
-    $s3ListRaw = Exec-Cmd -StepName "S3 object listing" -Command {
+    $s3ListRaw = Invoke-Step -StepName "S3 object listing" -Command {
         docker compose exec -T localstack awslocal s3 ls "s3://$Bucket" --recursive
     }
 
@@ -236,7 +236,7 @@ catch {
 
 foreach ($source in $sourceChecks) {
     try {
-        $s3ListRaw = Exec-Cmd -StepName "S3 object listing for $($source.Name)" -Command {
+        $s3ListRaw = Invoke-Step -StepName "S3 object listing for $($source.Name)" -Command {
             docker compose exec -T localstack awslocal s3 ls "s3://$Bucket" --recursive
         }
 
@@ -263,21 +263,21 @@ foreach ($source in $sourceChecks) {
 }
 
 try {
-    $streamStatus = Exec-Cmd -StepName "Kinesis stream status" -Command {
+    $streamStatus = Invoke-Step -StepName "Kinesis stream status" -Command {
         docker compose exec -T localstack awslocal kinesis describe-stream --stream-name $Stream --query "StreamDescription.StreamStatus" --output text
     }
 
     $streamReady = ($streamStatus.Trim() -eq "ACTIVE")
 
-    $shardId = Exec-Cmd -StepName "Kinesis shard id" -Command {
+    $shardId = Invoke-Step -StepName "Kinesis shard id" -Command {
         docker compose exec -T localstack awslocal kinesis describe-stream --stream-name $Stream --query "StreamDescription.Shards[0].ShardId" --output text
     }
 
-    $iterator = Exec-Cmd -StepName "Kinesis shard iterator" -Command {
+    $iterator = Invoke-Step -StepName "Kinesis shard iterator" -Command {
         docker compose exec -T localstack awslocal kinesis get-shard-iterator --stream-name $Stream --shard-id $shardId --shard-iterator-type TRIM_HORIZON --query "ShardIterator" --output text
     }
 
-    $recordsCountRaw = Exec-Cmd -StepName "Kinesis records" -Command {
+    $recordsCountRaw = Invoke-Step -StepName "Kinesis records" -Command {
         docker compose exec -T localstack awslocal kinesis get-records --shard-iterator $iterator --limit 10 --query "length(Records)" --output text
     }
 
@@ -291,21 +291,21 @@ catch {
 
 foreach ($source in $sourceChecks) {
     try {
-        $streamStatus = Exec-Cmd -StepName "Kinesis stream status for $($source.Name)" -Command {
+        $streamStatus = Invoke-Step -StepName "Kinesis stream status for $($source.Name)" -Command {
             docker compose exec -T localstack awslocal kinesis describe-stream --stream-name $($source.Stream) --query "StreamDescription.StreamStatus" --output text
         }
 
         $streamReady = ($streamStatus.Trim() -eq "ACTIVE")
 
-        $shardId = Exec-Cmd -StepName "Kinesis shard id for $($source.Name)" -Command {
+        $shardId = Invoke-Step -StepName "Kinesis shard id for $($source.Name)" -Command {
             docker compose exec -T localstack awslocal kinesis describe-stream --stream-name $($source.Stream) --query "StreamDescription.Shards[0].ShardId" --output text
         }
 
-        $iterator = Exec-Cmd -StepName "Kinesis shard iterator for $($source.Name)" -Command {
+        $iterator = Invoke-Step -StepName "Kinesis shard iterator for $($source.Name)" -Command {
             docker compose exec -T localstack awslocal kinesis get-shard-iterator --stream-name $($source.Stream) --shard-id $shardId --shard-iterator-type TRIM_HORIZON --query "ShardIterator" --output text
         }
 
-        $recordsCountRaw = Exec-Cmd -StepName "Kinesis records for $($source.Name)" -Command {
+        $recordsCountRaw = Invoke-Step -StepName "Kinesis records for $($source.Name)" -Command {
             docker compose exec -T localstack awslocal kinesis get-records --shard-iterator $iterator --limit 10 --query "length(Records)" --output text
         }
 
@@ -319,15 +319,15 @@ foreach ($source in $sourceChecks) {
 }
 
 try {
-    $dbReady = Exec-Cmd -StepName "Postgres connectivity" -Command {
+    $dbReady = Invoke-Step -StepName "Postgres connectivity" -Command {
         docker compose exec -T postgres psql -U $DbUser -d $DbName -tAc "SELECT 1"
     }
 
-    $tableExists = Exec-Cmd -StepName "Postgres table existence" -Command {
+    $tableExists = Invoke-Step -StepName "Postgres table existence" -Command {
         docker compose exec -T postgres psql -U $DbUser -d $DbName -tAc "SELECT to_regclass('$DbTable') IS NOT NULL;"
     }
 
-    $rowCountRaw = Exec-Cmd -StepName "Postgres row count" -Command {
+    $rowCountRaw = Invoke-Step -StepName "Postgres row count" -Command {
         docker compose exec -T postgres psql -U $DbUser -d $DbName -tAc "SELECT COUNT(*) FROM $DbTable;"
     }
 
@@ -343,11 +343,11 @@ catch {
 
 foreach ($source in $sourceChecks) {
     try {
-        $tableExists = Exec-Cmd -StepName "Postgres table existence for $($source.Name)" -Command {
+        $tableExists = Invoke-Step -StepName "Postgres table existence for $($source.Name)" -Command {
             docker compose exec -T postgres psql -U $DbUser -d $DbName -tAc "SELECT to_regclass('$($source.DbTable)') IS NOT NULL;"
         }
 
-        $rowCountRaw = Exec-Cmd -StepName "Postgres row count for $($source.Name)" -Command {
+        $rowCountRaw = Invoke-Step -StepName "Postgres row count for $($source.Name)" -Command {
             docker compose exec -T postgres psql -U $DbUser -d $DbName -tAc $source.DbQuery
         }
 

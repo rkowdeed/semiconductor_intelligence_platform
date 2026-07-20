@@ -1,0 +1,22 @@
+{
+  "eventType": "FILE_INGESTED",
+  "timestamp": "2026-07-20T10:07:00Z",
+  "metadata": {
+    "sourceSystem": "env_sensor_hub",
+    "fileName": "humidity_feed.mqtt.json",
+    "category": "environmental",
+    "format": "MQTT",
+    "contentVersion": "v1.5"
+  },
+  "file": {
+    "contentEncoding": "JSON",
+    "content": {
+      "topic": "fab/zone-2/humidity",
+      "qos": 1,
+      "payload": {
+        "humidityPct": 41.2,
+        "temperatureC": 22.4
+      }
+    }
+  }
+}

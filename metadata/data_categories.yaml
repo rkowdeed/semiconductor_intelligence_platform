@@ -1,0 +1,44 @@
+# ---------------------------------------------------------------------------
+# Data categories and supported formats for onboarding and validation planning.
+# ---------------------------------------------------------------------------
+data_categories:
+
+  telemetry:
+    formats: ["Protobuf", "MQTT", "Avro", "gRPC"]
+    examples: ["Performance counters", "Sensors"]
+
+  system_health:
+    formats: ["JSON", "REST", "XML"]
+    examples: ["Snapshots", "Health reports"]
+
+  logs:
+    formats: ["Syslog", "JSON Logs", "Text"]
+    examples: ["Driver logs", "OS logs", "API logs"]
+
+  events:
+    formats: ["JSON", "Kafka", "MQTT"]
+    examples: ["Alerts", "Alarms"]
+
+  configuration:
+    formats: ["YAML", "JSON", "XML"]
+    examples: ["Hardware inventory"]
+
+  performance:
+    formats: ["Parquet", "CSV"]
+    examples: ["Benchmark results"]
+
+  validation:
+    formats: ["CSV", "HDF5", "XML"]
+    examples: ["Test reports"]
+
+  environmental:
+    formats: ["MQTT", "JSON"]
+    examples: ["Temperature", "Humidity"]
+
+  design:
+    formats: ["Verilog", "GDSII", "LEF/DEF"]
+    examples: ["EDA data"]
+
+  manufacturing:
+    formats: ["STDF", "SECS/GEM", "OPC-UA"]
+    examples: ["Fab equipment"]

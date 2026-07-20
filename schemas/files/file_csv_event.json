@@ -1,0 +1,91 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap.local/schemas/files/file_csv_event.json",
+  "title": "File Ingestion - CSV Content Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventType", "metadata", "file", "timestamp"],
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "enum": ["FILE_INGESTED"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceSystem",
+        "fileName",
+        "fileType",
+        "structure",
+        "contentVersion"
+      ],
+      "properties": {
+        "sourceSystem": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "fileName": {
+          "type": "string",
+          "pattern": "^.*\\.csv$"
+        },
+        "fileType": {
+          "type": "string",
+          "enum": ["CSV"]
+        },
+        "structure": {
+          "type": "string",
+          "enum": ["ROW_BASED"]
+        },
+        "contentVersion": {
+          "type": "string",
+          "pattern": "^v[0-9]+(\\.[0-9]+)*$"
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["delimiter", "hasHeader", "columns", "rows"],
+      "properties": {
+        "delimiter": {
+          "type": "string",
+          "enum": [",", ";", "|", "\\t"]
+        },
+        "hasHeader": {
+          "type": "boolean"
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "oneOf": [
+                { "type": "string" },
+                { "type": "number" },
+                { "type": "integer" },
+                { "type": "boolean" },
+                { "type": "null" }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

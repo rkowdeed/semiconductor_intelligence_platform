@@ -1,0 +1,18 @@
+{
+  "eventType": "FILE_INGESTED",
+  "timestamp": "2026-07-20T10:03:00Z",
+  "metadata": {
+    "sourceSystem": "alert_broker",
+    "fileName": "alarm_events.kafka.json",
+    "category": "events",
+    "format": "Kafka",
+    "contentVersion": "v2.0"
+  },
+  "file": {
+    "contentEncoding": "JSON",
+    "content": [
+      {"key": "ALARM-001", "severity": "HIGH", "state": "OPEN"},
+      {"key": "ALARM-002", "severity": "MEDIUM", "state": "ACK"}
+    ]
+  }
+}

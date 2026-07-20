@@ -1,0 +1,20 @@
+{
+  "eventType": "FILE_INGESTED",
+  "timestamp": "2026-07-20T10:01:00Z",
+  "metadata": {
+    "sourceSystem": "health_collector",
+    "fileName": "fab_health_snapshot.json",
+    "category": "system_health",
+    "format": "JSON",
+    "contentVersion": "v1.2"
+  },
+  "file": {
+    "contentEncoding": "JSON",
+    "content": {
+      "host": "ingestion-node-01",
+      "status": "UP",
+      "cpuPct": 38.4,
+      "memoryPct": 62.1
+    }
+  }
+}

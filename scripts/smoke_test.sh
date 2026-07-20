@@ -7,6 +7,9 @@ BASE_URL="${BASE_URL:-http://localhost:8000/api/v1}"
 echo "==> Health check"
 curl -sf "${BASE_URL}/health" | python3 -m json.tool
 
+echo "==> Data categories check"
+curl -sf "${BASE_URL}/config/data-categories" | python3 -m json.tool
+
 echo "==> Posting sample MES event"
 curl -sf -X POST "${BASE_URL}/mes/events" \
   -H "Content-Type: application/json" \
@@ -26,6 +29,14 @@ echo "==> Posting sample PLM event"
 curl -sf -X POST "${BASE_URL}/plm/events" \
   -H "Content-Type: application/json" \
   -d @sample-data/plm/product_lifecycle_event_sample.json | python3 -m json.tool
+
+echo "==> Posting multiformat sample events"
+for sample_file in sample-data/files/multiformat/*_sample.json; do
+  echo "   -> ${sample_file}"
+  curl -sf -X POST "${BASE_URL}/files/multiformat/events" \
+    -H "Content-Type: application/json" \
+    -d @"${sample_file}" | python3 -m json.tool
+done
 
 echo "==> Posting invalid MES event (expect 400)"
 curl -s -o /dev/stderr -w "HTTP %{http_code}\n" -X POST "${BASE_URL}/mes/events" \

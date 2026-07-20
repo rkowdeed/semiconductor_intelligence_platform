@@ -1,0 +1,15 @@
+{
+  "eventType": "FILE_INGESTED",
+  "timestamp": "2026-07-20T10:06:00Z",
+  "metadata": {
+    "sourceSystem": "testbench_uploader",
+    "fileName": "metrology_tests.h5",
+    "category": "validation",
+    "format": "HDF5",
+    "contentVersion": "v2.4"
+  },
+  "file": {
+    "contentEncoding": "BASE64",
+    "content": "SERGNV9UUkFDRV9EQVRBX1NBTVBMRQ=="
+  }
+}

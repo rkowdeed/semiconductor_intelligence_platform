@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap.local/schemas/files/file_content_event.json",
+  "title": "File Ingestion - Multi Format Content Event",
+  "description": "Accepts JSON, CSV, or XML file ingestion envelopes.",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["metadata", "file"],
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "required": ["fileType", "structure"],
+          "properties": {
+            "fileType": { "const": "JSON" },
+            "structure": { "enum": ["OBJECT", "ARRAY", "JSONL"] }
+          }
+        },
+        "file": {
+          "type": "object",
+          "required": ["content"]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["metadata", "file"],
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "required": ["fileType", "structure"],
+          "properties": {
+            "fileType": { "const": "CSV" },
+            "structure": { "const": "ROW_BASED" }
+          }
+        },
+        "file": {
+          "type": "object",
+          "required": ["delimiter", "hasHeader", "columns", "rows"]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "required": ["metadata", "file"],
+      "properties": {
+        "metadata": {
+          "type": "object",
+          "required": ["fileType", "structure"],
+          "properties": {
+            "fileType": { "const": "XML" },
+            "structure": { "enum": ["TREE", "DOCUMENT"] }
+          }
+        },
+        "file": {
+          "type": "object",
+          "required": ["rootTag", "records"]
+        }
+      }
+    }
+  ]
+}

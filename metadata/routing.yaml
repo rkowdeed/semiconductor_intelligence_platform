@@ -23,3 +23,23 @@ routing:
     stream: plm
     raw_bucket: semiconductor-landing
     raw_prefix: plm
+
+  file_json:
+    stream: metadata
+    raw_bucket: semiconductor-landing
+    raw_prefix: files/json
+
+  file_csv:
+    stream: metadata
+    raw_bucket: semiconductor-landing
+    raw_prefix: files/csv
+
+  file_xml:
+    stream: metadata
+    raw_bucket: semiconductor-landing
+    raw_prefix: files/xml
+
+  file_multiformat:
+    stream: metadata
+    raw_bucket: semiconductor-landing
+    raw_prefix: files/multiformat

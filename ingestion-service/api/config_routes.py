@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 
 from api.dependencies import get_metadata_registry
 from common.config.metadata_registry import MetadataRegistry
-from models.schemas import SourceInfo, StreamInfo
+from models.schemas import DataCategoryInfo, SourceInfo, StreamInfo
 
 router = APIRouter(prefix="/config", tags=["configuration"])
 
@@ -37,4 +37,23 @@ def list_streams(registry: MetadataRegistry = Depends(get_metadata_registry)) ->
     return [
         StreamInfo(logical_name=name, physical_name=cfg["name"], shard_count=cfg.get("shard_count", 1))
         for name, cfg in streams.items()
+    ]
+
+
+@router.get(
+    "/data-categories",
+    response_model=list[DataCategoryInfo],
+    summary="List supported data categories and formats",
+)
+def list_data_categories(
+    registry: MetadataRegistry = Depends(get_metadata_registry),
+) -> list[DataCategoryInfo]:
+    categories = registry.get_data_categories()
+    return [
+        DataCategoryInfo(
+            category=name,
+            formats=cfg.get("formats", []),
+            examples=cfg.get("examples", []),
+        )
+        for name, cfg in categories.items()
     ]

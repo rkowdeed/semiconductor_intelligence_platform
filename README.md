@@ -107,7 +107,7 @@ Semiconductor_Operations_Data_Platform/
 │                              # models, validation, storage, aws, repository, utils)
 ├── ingestion-service/        # the FastAPI service
 ├── alembic/                  # optional migration-driven schema management
-├── tests/                    # pytest suite (34 tests)
+├── tests/                    # pytest suite (53 tests)
 └── docs/
 ```
 
@@ -289,7 +289,7 @@ pip install -r requirements.txt --break-system-packages
 pytest
 ```
 
-34 tests cover: schema validation, the REST API (happy path + validation
+53 tests cover: schema validation, the REST API (happy path + validation
 failure + malformed JSON), the Repository Pattern, the Kinesis publisher, S3
 upload, and the configuration loader.
 
@@ -335,7 +335,7 @@ Every request is logged as a single JSON line (via `structlog`) containing
 - [x] Event published to the `mes-events` Kinesis stream
 - [x] Curated record persisted to PostgreSQL (`mdm.lot_master`)
 - [x] Structured JSON logs + passing `/api/v1/health`
-- [x] Full `pytest` suite passes (34/34)
+- [x] Full `pytest` suite passes (53/53)
 
 ## Future Compatibility
 

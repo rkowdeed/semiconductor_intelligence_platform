@@ -110,6 +110,16 @@ def test_config_streams_endpoint(client: TestClient) -> None:
     assert "mes" in names
 
 
+def test_config_data_categories_endpoint(client: TestClient) -> None:
+    response = client.get("/api/v1/config/data-categories")
+    assert response.status_code == 200
+    categories = {item["category"]: item for item in response.json()}
+    assert "manufacturing" in categories
+    assert "STDF" in categories["manufacturing"]["formats"]
+    assert "telemetry" in categories
+    assert "Protobuf" in categories["telemetry"]["formats"]
+
+
 def test_post_valid_mes_event_returns_202(client: TestClient, sample_mes_payload: dict) -> None:
     response = client.post("/api/v1/mes/events", json=sample_mes_payload)
     assert response.status_code == 202
@@ -153,6 +163,19 @@ def test_post_valid_plm_event_returns_202(client: TestClient, sample_plm_payload
     assert body["status"] == "ACCEPTED"
     assert body["s3_key"].startswith("plm/")
     assert body["stream"] == "plm-events"
+    assert body["curated_record_id"] is not None
+
+
+def test_post_valid_multiformat_event_returns_202(
+    client: TestClient, sample_file_multiformat_payload: dict
+) -> None:
+    response = client.post("/api/v1/files/multiformat/events", json=sample_file_multiformat_payload)
+    assert response.status_code == 202
+    body = response.json()
+    assert body["source"] == "file_multiformat"
+    assert body["status"] == "ACCEPTED"
+    assert body["s3_key"].startswith("files/multiformat/")
+    assert body["stream"] == "metadata-events"
     assert body["curated_record_id"] is not None
 
 

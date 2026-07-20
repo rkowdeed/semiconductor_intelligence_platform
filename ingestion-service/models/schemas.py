@@ -56,3 +56,9 @@ class StreamInfo(BaseModel):
     logical_name: str
     physical_name: str
     shard_count: int
+
+
+class DataCategoryInfo(BaseModel):
+    category: str
+    formats: list[str]
+    examples: list[str]

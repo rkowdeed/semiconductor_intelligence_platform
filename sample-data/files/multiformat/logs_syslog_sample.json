@@ -1,0 +1,15 @@
+{
+  "eventType": "FILE_INGESTED",
+  "timestamp": "2026-07-20T10:02:00Z",
+  "metadata": {
+    "sourceSystem": "os_logger",
+    "fileName": "driver.syslog",
+    "category": "logs",
+    "format": "Syslog",
+    "contentVersion": "v1.0"
+  },
+  "file": {
+    "contentEncoding": "TEXT",
+    "content": "<34>1 2026-07-20T10:01:59Z host1 driver 1001 ID47 [exampleSDID@32473 iut=3 eventSource=Application eventID=1011] Driver initialized"
+  }
+}

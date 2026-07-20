@@ -1,0 +1,15 @@
+{
+  "eventType": "FILE_INGESTED",
+  "timestamp": "2026-07-20T10:04:00Z",
+  "metadata": {
+    "sourceSystem": "inventory_sync",
+    "fileName": "hardware_inventory.yaml",
+    "category": "configuration",
+    "format": "YAML",
+    "contentVersion": "v3.1"
+  },
+  "file": {
+    "contentEncoding": "TEXT",
+    "content": "fab: FAB-01\nracks:\n  - id: R1\n    nodes: 12\n  - id: R2\n    nodes: 8\n"
+  }
+}

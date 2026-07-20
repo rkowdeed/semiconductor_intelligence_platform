@@ -1,0 +1,15 @@
+{
+  "eventType": "FILE_INGESTED",
+  "timestamp": "2026-07-20T10:05:00Z",
+  "metadata": {
+    "sourceSystem": "benchmark_runner",
+    "fileName": "etch_benchmark.parquet",
+    "category": "performance",
+    "format": "Parquet",
+    "contentVersion": "v1.0"
+  },
+  "file": {
+    "contentEncoding": "BASE64",
+    "content": "UEFSMV9EQVRBX0JMT0JfU0FNUExF"
+  }
+}

@@ -95,6 +95,11 @@ class MetadataRegistry:
         raw = self._loader.load(files["streams_file"])
         return raw.get("streams", {})
 
+    def get_data_categories(self) -> dict[str, Any]:
+        files = self._metadata_files()
+        raw = self._loader.load(files["data_categories_file"])
+        return raw.get("data_categories", {})
+
     def resolve_stream_name(self, logical_name: str) -> str:
         streams = self.get_streams()
         if logical_name not in streams:

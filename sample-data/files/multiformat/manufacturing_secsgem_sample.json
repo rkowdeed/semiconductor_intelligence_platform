@@ -1,0 +1,15 @@
+{
+  "eventType": "FILE_INGESTED",
+  "timestamp": "2026-07-20T10:09:00Z",
+  "metadata": {
+    "sourceSystem": "secs_gateway",
+    "fileName": "tool_message.sml",
+    "category": "manufacturing",
+    "format": "SECS/GEM",
+    "contentVersion": "v1.0"
+  },
+  "file": {
+    "contentEncoding": "BASE64",
+    "content": "U0VDU19HRU1fUzZGMV9NZXNzYWdl"
+  }
+}

@@ -1,0 +1,286 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sap.local/schemas/files/file_multiformat_event.json",
+  "title": "File Ingestion - Category Aware Multi Format Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["eventType", "timestamp", "metadata", "file"],
+  "properties": {
+    "eventType": {
+      "type": "string",
+      "enum": ["FILE_INGESTED"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceSystem",
+        "fileName",
+        "category",
+        "format",
+        "contentVersion"
+      ],
+      "properties": {
+        "sourceSystem": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "fileName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "category": {
+          "type": "string",
+          "enum": [
+            "telemetry",
+            "system_health",
+            "logs",
+            "events",
+            "configuration",
+            "performance",
+            "validation",
+            "environmental",
+            "design",
+            "manufacturing"
+          ]
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "Protobuf",
+            "MQTT",
+            "Avro",
+            "gRPC",
+            "JSON",
+            "REST",
+            "XML",
+            "Syslog",
+            "JSON Logs",
+            "Text",
+            "Kafka",
+            "YAML",
+            "Parquet",
+            "CSV",
+            "HDF5",
+            "Verilog",
+            "GDSII",
+            "LEF/DEF",
+            "STDF",
+            "SECS/GEM",
+            "OPC-UA"
+          ]
+        },
+        "contentVersion": {
+          "type": "string",
+          "pattern": "^v[0-9]+(\\.[0-9]+)*$"
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contentEncoding", "content"],
+      "properties": {
+        "contentEncoding": {
+          "type": "string",
+          "enum": ["JSON", "TEXT", "BASE64"]
+        },
+        "content": {
+          "oneOf": [
+            { "type": "object" },
+            { "type": "array" },
+            { "type": "string", "minLength": 1 }
+          ]
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "category": { "const": "telemetry" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "format": { "enum": ["Protobuf", "MQTT", "Avro", "gRPC"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "category": { "const": "system_health" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "format": { "enum": ["JSON", "REST", "XML"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "category": { "const": "logs" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "format": { "enum": ["Syslog", "JSON Logs", "Text"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "category": { "const": "events" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "format": { "enum": ["JSON", "Kafka", "MQTT"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "category": { "const": "configuration" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "format": { "enum": ["YAML", "JSON", "XML"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "category": { "const": "performance" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "format": { "enum": ["Parquet", "CSV"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "category": { "const": "validation" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "format": { "enum": ["CSV", "HDF5", "XML"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "category": { "const": "environmental" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "format": { "enum": ["MQTT", "JSON"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "category": { "const": "design" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "format": { "enum": ["Verilog", "GDSII", "LEF/DEF"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": { "category": { "const": "manufacturing" } }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "format": { "enum": ["STDF", "SECS/GEM", "OPC-UA"] }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

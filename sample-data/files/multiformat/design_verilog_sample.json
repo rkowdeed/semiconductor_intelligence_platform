@@ -1,0 +1,15 @@
+{
+  "eventType": "FILE_INGESTED",
+  "timestamp": "2026-07-20T10:08:00Z",
+  "metadata": {
+    "sourceSystem": "eda_exporter",
+    "fileName": "top_level_netlist.v",
+    "category": "design",
+    "format": "Verilog",
+    "contentVersion": "v7.0"
+  },
+  "file": {
+    "contentEncoding": "TEXT",
+    "content": "module top(input clk, input rst_n, output reg done); always @(posedge clk) begin if(!rst_n) done <= 1'b0; else done <= 1'b1; end endmodule"
+  }
+}

@@ -22,3 +22,23 @@ validation:
     schema: schemas/plm/product_lifecycle_event.json
     fail_fast: true
     on_failure_status_code: 400
+
+  file_json:
+    schema: schemas/files/file_json_event.json
+    fail_fast: true
+    on_failure_status_code: 400
+
+  file_csv:
+    schema: schemas/files/file_csv_event.json
+    fail_fast: true
+    on_failure_status_code: 400
+
+  file_xml:
+    schema: schemas/files/file_xml_event.json
+    fail_fast: true
+    on_failure_status_code: 400
+
+  file_multiformat:
+    schema: schemas/files/file_multiformat_event.json
+    fail_fast: true
+    on_failure_status_code: 400

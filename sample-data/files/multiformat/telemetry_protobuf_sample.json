@@ -1,0 +1,15 @@
+{
+  "eventType": "FILE_INGESTED",
+  "timestamp": "2026-07-20T10:00:00Z",
+  "metadata": {
+    "sourceSystem": "telemetry_gateway",
+    "fileName": "tool_counters.pb",
+    "category": "telemetry",
+    "format": "Protobuf",
+    "contentVersion": "v1.0"
+  },
+  "file": {
+    "contentEncoding": "BASE64",
+    "content": "CghUT09MLTEyMxAFGgQAAAAA"
+  }
+}

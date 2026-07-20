@@ -56,3 +56,55 @@ sources:
     raw_bucket: semiconductor-landing
     raw_prefix: plm
     enabled: true
+
+  file_json:
+    display_name: Generic File Ingestion - JSON
+    endpoint: /files/json/events
+    method: POST
+    type: REST
+    schema: schemas/files/file_json_event.json
+    target_table: raw_events
+    target_schema: metadata
+    stream: metadata
+    raw_bucket: semiconductor-landing
+    raw_prefix: files/json
+    enabled: true
+
+  file_csv:
+    display_name: Generic File Ingestion - CSV
+    endpoint: /files/csv/events
+    method: POST
+    type: REST
+    schema: schemas/files/file_csv_event.json
+    target_table: raw_events
+    target_schema: metadata
+    stream: metadata
+    raw_bucket: semiconductor-landing
+    raw_prefix: files/csv
+    enabled: true
+
+  file_xml:
+    display_name: Generic File Ingestion - XML
+    endpoint: /files/xml/events
+    method: POST
+    type: REST
+    schema: schemas/files/file_xml_event.json
+    target_table: raw_events
+    target_schema: metadata
+    stream: metadata
+    raw_bucket: semiconductor-landing
+    raw_prefix: files/xml
+    enabled: true
+
+  file_multiformat:
+    display_name: Generic File Ingestion - Category/Format Matrix
+    endpoint: /files/multiformat/events
+    method: POST
+    type: REST
+    schema: schemas/files/file_multiformat_event.json
+    target_table: raw_events
+    target_schema: metadata
+    stream: metadata
+    raw_bucket: semiconductor-landing
+    raw_prefix: files/multiformat
+    enabled: true
