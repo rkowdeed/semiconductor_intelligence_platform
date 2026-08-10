@@ -54,7 +54,7 @@ These services are intentionally lightweight and can be backed by PostgreSQL, S3
 
 ## Reference Diagram: Secure AI and Human Data Consumption
 
-The following diagram shows the target reference architecture for Archimedes chip and telemetry data flowing into PostgreSQL and being consumed securely by AI agents and human users. The LLM gateway and rate-limiting layers are shown as the recommended access path for agent-driven usage; the current repository provides the ingestion, governance, and AI scaffolding that this pattern can build on.
+The following diagram shows the target reference architecture for Archimedes chip and telemetry data flowing through the S3 medallion layers (raw bronze, silver, gold), then from the S3 gold layer into AWS Kinesis / Kafka topics and onward into PostgreSQL through a data-loader tier. The LLM gateway and rate-limiting layers are shown as the recommended access path for agent-driven usage; the current repository provides the ingestion, governance, and AI scaffolding that this pattern can build on.
 
 ```mermaid
 flowchart LR
@@ -66,54 +66,66 @@ flowchart LR
         A --> A2
     end
 
-    subgraph Ingest["Ingestion and Curation"]
+    subgraph Ingest["Ingestion, Transformation, and Curation"]
         B[Ingestion API<br/>FastAPI + metadata-driven routes]
         C[Schema Validation<br/>JSON Schema / format parsing]
-        D[Raw Landing Zone<br/>S3 / Lakehouse]
-        E[Streaming / Decoupling<br/>Kinesis]
-        F[Curated Operational Store<br/>PostgreSQL]
+        D[S3 Raw Landing<br/>Bronze layer]
+        E[Transformation / Normalization Loaders<br/>Bronze to Silver]
+        F[S3 Refined Layer<br/>Silver layer]
+        G[Business Transformation / Publishing Loaders<br/>Silver to Gold]
+        H[S3 Curated Layer<br/>Gold layer]
+        I[AWS Kinesis / Kafka Topics]
+        J[PostgreSQL Data Loader]
+        K[Curated Operational Store<br/>PostgreSQL]
     end
 
     subgraph Security["Security and Governance"]
-        G[AuthN / AuthZ<br/>SSO, service identity, RBAC]
-        H[Data Governance Policies<br/>IP-sensitive access control]
-        I[Audit / Observability<br/>request lineage, logs, metrics]
+        L[AuthN / AuthZ<br/>SSO, service identity, RBAC]
+        M[Data Governance Policies<br/>IP-sensitive access control]
+        N[Audit / Observability<br/>request lineage, logs, metrics]
     end
 
     subgraph Consumption["Consumption Layer"]
-        J[Query / App API]
-        K[Rate Limiter]
-        L[LLM Gateway<br/>prompt policy, model routing, guardrails]
-        M[AI Agents]
-        N[Human Users / Analysts]
+        O[Query / App API]
+        P[Rate Limiter]
+        Q[LLM Gateway<br/>prompt policy, model routing, guardrails]
+        R[AI Agents]
+        S[Human Users / Analysts]
     end
 
     A1 --> B
     A2 --> B
     B --> C
     C --> D
-    C --> E
-    C --> F
-
-    G --> J
-    H --> J
-    F --> J
-    D -. contextual files .-> L
-    F --> I
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    H --> I
+    I --> J
     J --> K
-    K --> L
+
+    L --> O
+    M --> O
+    K --> O
+    H -. contextual files .-> Q
     K --> N
-    L --> M
-    L --> F
-    N --> J
-    I -. monitoring .-> J
-    I -. monitoring .-> L
+    O --> P
+    P --> Q
+    P --> S
+    Q --> R
+    Q --> K
+    S --> O
+    N -. monitoring .-> O
+    N -. monitoring .-> Q
 ```
 
 ### Notes
 
-- Archimedes-originated chip data and telemetry enter through the ingestion API, are validated, and land in PostgreSQL as the trusted curated store.
-- Raw payloads can still be retained in S3 for replay, traceability, and RAG/document enrichment scenarios.
+- Archimedes-originated chip data and telemetry enter through the ingestion API, are validated, and first land in the S3 bronze layer.
+- Transformation and loader stages promote data from bronze to silver and from silver to gold before downstream operational serving.
+- The S3 gold layer is the publishing source for AWS Kinesis / Kafka topics, and PostgreSQL is loaded from those topics through a dedicated data-loader tier.
+- Raw, refined, and curated S3 layers remain available for replay, lineage, traceability, and RAG/document enrichment scenarios.
 - Human access should terminate at the application/query API, protected by authentication, authorization, and audit logging.
 - AI-agent access should preferably traverse a rate limiter and LLM gateway so prompts, tool calls, quotas, and model routing can be centrally governed.
 - In the current codebase, governance and AI scaffolding already exist in [governance_service.py](C:/Users/ravik/rkpy/Semiconductor_Intelligence_Platform.worktrees/architecture-diagram-ai-data-flow/common/governance/governance_service.py), [agent_service.py](C:/Users/ravik/rkpy/Semiconductor_Intelligence_Platform.worktrees/architecture-diagram-ai-data-flow/common/orchestration/agent_service.py), and [intelligence_service.py](C:/Users/ravik/rkpy/Semiconductor_Intelligence_Platform.worktrees/architecture-diagram-ai-data-flow/common/ai/intelligence_service.py); the LLM gateway and rate-limiter are represented here as the recommended integration pattern.
