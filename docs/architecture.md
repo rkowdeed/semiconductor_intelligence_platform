@@ -51,3 +51,69 @@ The repository now includes the core platform capabilities described in the AZIT
 - Intelligence: [common/ai/intelligence_service.py](common/ai/intelligence_service.py) provides an in-memory document index and search scaffold suitable for RAG-style retrieval.
 
 These services are intentionally lightweight and can be backed by PostgreSQL, S3 manifests, and pgvector in a later phase without changing the ingestion API.
+
+## Reference Diagram: Secure AI and Human Data Consumption
+
+The following diagram shows the target reference architecture for Archimedes chip and telemetry data flowing into PostgreSQL and being consumed securely by AI agents and human users. The LLM gateway and rate-limiting layers are shown as the recommended access path for agent-driven usage; the current repository provides the ingestion, governance, and AI scaffolding that this pattern can build on.
+
+```mermaid
+flowchart LR
+    subgraph Source["Source Systems"]
+        A[Archimedes Server]
+        A1[Chip Data Files]
+        A2[Telemetry / Tool Events]
+        A --> A1
+        A --> A2
+    end
+
+    subgraph Ingest["Ingestion and Curation"]
+        B[Ingestion API<br/>FastAPI + metadata-driven routes]
+        C[Schema Validation<br/>JSON Schema / format parsing]
+        D[Raw Landing Zone<br/>S3 / Lakehouse]
+        E[Streaming / Decoupling<br/>Kinesis]
+        F[Curated Operational Store<br/>PostgreSQL]
+    end
+
+    subgraph Security["Security and Governance"]
+        G[AuthN / AuthZ<br/>SSO, service identity, RBAC]
+        H[Data Governance Policies<br/>IP-sensitive access control]
+        I[Audit / Observability<br/>request lineage, logs, metrics]
+    end
+
+    subgraph Consumption["Consumption Layer"]
+        J[Query / App API]
+        K[Rate Limiter]
+        L[LLM Gateway<br/>prompt policy, model routing, guardrails]
+        M[AI Agents]
+        N[Human Users / Analysts]
+    end
+
+    A1 --> B
+    A2 --> B
+    B --> C
+    C --> D
+    C --> E
+    C --> F
+
+    G --> J
+    H --> J
+    F --> J
+    D -. contextual files .-> L
+    F --> I
+    J --> K
+    K --> L
+    K --> N
+    L --> M
+    L --> F
+    N --> J
+    I -. monitoring .-> J
+    I -. monitoring .-> L
+```
+
+### Notes
+
+- Archimedes-originated chip data and telemetry enter through the ingestion API, are validated, and land in PostgreSQL as the trusted curated store.
+- Raw payloads can still be retained in S3 for replay, traceability, and RAG/document enrichment scenarios.
+- Human access should terminate at the application/query API, protected by authentication, authorization, and audit logging.
+- AI-agent access should preferably traverse a rate limiter and LLM gateway so prompts, tool calls, quotas, and model routing can be centrally governed.
+- In the current codebase, governance and AI scaffolding already exist in [governance_service.py](C:/Users/ravik/rkpy/Semiconductor_Intelligence_Platform.worktrees/architecture-diagram-ai-data-flow/common/governance/governance_service.py), [agent_service.py](C:/Users/ravik/rkpy/Semiconductor_Intelligence_Platform.worktrees/architecture-diagram-ai-data-flow/common/orchestration/agent_service.py), and [intelligence_service.py](C:/Users/ravik/rkpy/Semiconductor_Intelligence_Platform.worktrees/architecture-diagram-ai-data-flow/common/ai/intelligence_service.py); the LLM gateway and rate-limiter are represented here as the recommended integration pattern.
