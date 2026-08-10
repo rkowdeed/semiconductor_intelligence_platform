@@ -1,4 +1,4 @@
-# Semiconductor_Operations_Data_Platform (SODP) — Phase 1
+# Semiconductor_Intelligence_Platform(SIP) — Phase 1
 
 An AWS-native, **metadata-driven** data ingestion framework for semiconductor
 manufacturing data. Phase 1 ingests MES (Manufacturing Execution System)
@@ -412,3 +412,5 @@ ingestion framework itself: a Metadata Service, MDM Service, Data Quality
 Service, Catalog Service, Semantic Layer, Knowledge Graph, and AI Agents —
 each can subscribe to the existing Kinesis streams or read from the S3
 landing zone / curated PostgreSQL tables.
+#   s e m i c o n d u c t o r _ i n t e l l i g e n c e _ p l a t f o r m  
+ 
