@@ -24,7 +24,7 @@ A sovereign semiconductor intelligence platform for ingesting, governing, and an
 This reference view shows how Archimedes chip data and telemetry flow through S3 bronze, silver, and gold layers, then through AWS Kinesis / Kafka topics into PostgreSQL via a data loader before secure consumption by AI agents and human users.
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[Archimedes Server<br/>chip data + telemetry] --> B[Ingestion API]
     B --> C[Validation / Parsing]
     C --> D[S3 Bronze<br/>raw landing]
@@ -32,7 +32,7 @@ flowchart LR
     E --> F[S3 Silver<br/>refined layer]
     F --> G[Silver to Gold<br/>transformations / loaders]
     G --> H[S3 Gold<br/>curated layer]
-    H --> I[AWS Kinesis / Kafka Topics]
+    H --> I[AWS Kinesis / Kafka<br/>Topics]
     I --> J[PostgreSQL Data Loader]
     J --> K[Curated PostgreSQL]
 

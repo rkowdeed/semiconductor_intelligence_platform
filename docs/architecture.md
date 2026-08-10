@@ -57,13 +57,9 @@ These services are intentionally lightweight and can be backed by PostgreSQL, S3
 The following diagram shows the target reference architecture for Archimedes chip and telemetry data flowing through the S3 medallion layers (raw bronze, silver, gold), then from the S3 gold layer into AWS Kinesis / Kafka topics and onward into PostgreSQL through a data-loader tier. The LLM gateway and rate-limiting layers are shown as the recommended access path for agent-driven usage; the current repository provides the ingestion, governance, and AI scaffolding that this pattern can build on.
 
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph Source["Source Systems"]
-        A[Archimedes Server]
-        A1[Chip Data Files]
-        A2[Telemetry / Tool Events]
-        A --> A1
-        A --> A2
+        A[Archimedes Server<br/>chip data / telemetry data]
     end
 
     subgraph Ingest["Ingestion, Transformation, and Curation"]
@@ -72,9 +68,9 @@ flowchart LR
         D[S3 Raw Landing<br/>Bronze layer]
         E[Transformation / Normalization Loaders<br/>Bronze to Silver]
         F[S3 Refined Layer<br/>Silver layer]
-        G[Business Transformation / Publishing Loaders<br/>Silver to Gold]
+        G[Business Transformation / Publishing<br/>Loaders<br/>Silver to Gold]
         H[S3 Curated Layer<br/>Gold layer]
-        I[AWS Kinesis / Kafka Topics]
+        I[AWS Kinesis / Kafka<br/>Topics]
         J[PostgreSQL Data Loader]
         K[Curated Operational Store<br/>PostgreSQL]
     end
@@ -93,8 +89,7 @@ flowchart LR
         S[Human Users / Analysts]
     end
 
-    A1 --> B
-    A2 --> B
+    A --> B
     B --> C
     C --> D
     D --> E
