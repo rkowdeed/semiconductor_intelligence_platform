@@ -39,8 +39,8 @@ Once the services are up, use the Swagger UI at `http://localhost:8000/docs` or 
 
 ## Test and validation
 
-```bash
-pytest
+```powershell
+./scripts/run_pytest.ps1 -q tests/test_api.py -k "validation_ui"
 ```
 
 The repository includes sample payloads and smoke-test flows for telemetry, yield, and core ingestion paths.
