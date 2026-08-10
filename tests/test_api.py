@@ -103,6 +103,29 @@ def test_config_sources_endpoint(client: TestClient) -> None:
     assert "mes" in names
 
 
+def test_validation_ui_page_is_available(client: TestClient) -> None:
+    response = client.get("/ui/validate")
+    assert response.status_code == 200
+    assert "Validate ingestion output" in response.text
+
+
+def test_validation_ui_submit_returns_pipeline_evidence(client: TestClient, sample_mes_payload: dict) -> None:
+    response = client.post(
+        "/api/v1/ui/validate",
+        json={
+            "source": "mes",
+            "content_type": "application/json",
+            "payload": sample_mes_payload,
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ingestion"]["source"] == "mes"
+    assert body["ingestion"]["status"] == "ACCEPTED"
+    assert body["postgresql"]["table"] in {"mdm.lot_master", "metadata.raw_events"}
+    assert body["kinesis"]["stream"] == "mes-events"
+
+
 def test_config_streams_endpoint(client: TestClient) -> None:
     response = client.get("/api/v1/config/streams")
     assert response.status_code == 200
