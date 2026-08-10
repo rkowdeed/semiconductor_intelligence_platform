@@ -75,6 +75,29 @@ Once the services are up, use the Swagger UI at `http://localhost:8000/docs` or 
 | PostgreSQL | Stores curated records and audit information |
 | Governance and AI layers | Applies policy rules and supports retrieval-based intelligence |
 
+## Repository layout
+
+| Folder | What it holds |
+| --- | --- |
+| `alembic/` | Database migration environment and revision history for schema evolution. |
+| `common/` | Shared platform code such as AWS wrappers, repositories, governance, orchestration, AI helpers, models, and reusable services. |
+| `config/` | Runtime configuration files for application settings, infrastructure endpoints, logging, and database connectivity. |
+| `docs/` | Architecture notes, presentations, and other project documentation. |
+| `infrastructure/` | Container, LocalStack, and environment bootstrap assets used to run the platform locally or provision supporting services. |
+| `ingestion-service/` | The FastAPI application entrypoints, API routes, and service wiring for ingestion workflows. |
+| `metadata/` | Metadata-driven source definitions, routing, mappings, stream settings, and validation configuration that control ingestion behavior. |
+| `sample-data/` | Example payloads and sample files for manual testing, demos, and validation scenarios. |
+| `schemas/` | JSON schemas and related schema definitions used to validate incoming source payloads. |
+| `scripts/` | Utility scripts for setup, test execution, data normalization, and operational workflows. |
+| `tests/` | Automated tests covering API behavior, metadata validation, governance, and end-to-end platform flows. |
+
+Use this layout as the default guide for placing new code:
+- source onboarding and routing changes usually belong in `metadata/` and `schemas/`
+- reusable logic should go under `common/`
+- API-specific behavior should go under `ingestion-service/`
+- operational helpers belong in `scripts/`
+- documentation updates belong in `docs/` or `README.md`
+
 ## Test and validation
 
 ```powershell
