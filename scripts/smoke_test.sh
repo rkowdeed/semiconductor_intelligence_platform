@@ -41,6 +41,16 @@ curl -sf -X POST "${BASE_URL}/plm/events" \
   -H "Content-Type: application/json" \
   -d @sample-data/plm/product_lifecycle_event_sample.json | python3 -m json.tool
 
+echo "==> Posting telemetry sample event"
+curl -sf -X POST "${BASE_URL}/telemetry/events" \
+  -H "Content-Type: application/json" \
+  -d @sample-data/telemetry/telemetry_sample.json | python3 -m json.tool
+
+echo "==> Posting yield sample event"
+curl -sf -X POST "${BASE_URL}/yield/events" \
+  -H "Content-Type: text/csv" \
+  -d @sample-data/yield/yield_sample.csv | python3 -m json.tool
+
 echo "==> Posting multiformat sample events"
 for sample_file in sample-data/files/multiformat/*_sample.json; do
   echo "   -> ${sample_file}"

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Telemetry Event",
+  "type": "object",
+  "required": ["eventType", "equipmentId", "timestamp", "metrics"],
+  "properties": {
+    "eventType": {"type": "string"},
+    "equipmentId": {"type": "string"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "metrics": {
+      "type": "object",
+      "required": ["temperature", "pressure"],
+      "properties": {
+        "temperature": {"type": "number"},
+        "pressure": {"type": "number"}
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,9 @@
+{
+  "eventType": "TELEMETRY_CAPTURED",
+  "equipmentId": "ETCH-01",
+  "timestamp": "2026-08-10T10:15:00Z",
+  "metrics": {
+    "temperature": 72.5,
+    "pressure": 2.1
+  }
+}

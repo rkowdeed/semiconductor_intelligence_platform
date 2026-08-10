@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Yield Event",
+  "type": "object",
+  "required": ["eventType", "lotId", "yieldRate", "timestamp"],
+  "properties": {
+    "eventType": {"type": "string"},
+    "lotId": {"type": "string"},
+    "yieldRate": {"type": "number"},
+    "timestamp": {"type": "string", "format": "date-time"}
+  },
+  "additionalProperties": true
+}

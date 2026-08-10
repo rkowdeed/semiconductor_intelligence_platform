@@ -14,3 +14,17 @@ mappings:
       temperature: temperature
       eventType: event_type
       timestamp: event_timestamp
+
+  telemetry:
+    target_table: raw_events
+    fields:
+      eventType: event_type
+      equipmentId: source
+      timestamp: created_at
+
+  yield:
+    target_table: raw_events
+    fields:
+      eventType: event_type
+      lotId: source
+      timestamp: created_at

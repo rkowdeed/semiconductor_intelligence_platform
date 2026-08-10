@@ -45,3 +45,16 @@ def test_data_categories_formats_match_expected_matrix() -> None:
     for category, formats in expected_formats.items():
         assert category in categories
         assert set(categories[category]["formats"]) == formats
+
+
+def test_telemetry_and_yield_sources_are_registered() -> None:
+    registry = MetadataRegistry()
+    sources = registry.get_sources()
+
+    telemetry_source = sources["telemetry"]
+    yield_source = sources["yield"]
+
+    assert telemetry_source.input_format == "JSON"
+    assert telemetry_source.schema.endswith("telemetry/telemetry_event.json")
+    assert yield_source.input_format == "CSV"
+    assert yield_source.schema.endswith("yield/yield_event.json")

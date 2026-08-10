@@ -7,6 +7,7 @@
 CREATE SCHEMA IF NOT EXISTS mdm;
 CREATE SCHEMA IF NOT EXISTS metadata;
 CREATE SCHEMA IF NOT EXISTS quality;
+CREATE SCHEMA IF NOT EXISTS ai;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -106,6 +107,49 @@ LEFT JOIN mes_curated m
     ON l.source = 'mes' AND m.source = l.source AND m.rn = l.rn
 LEFT JOIN raw_curated r
     ON l.source <> 'mes' AND r.source = l.source AND r.rn = l.rn;
+
+-- governance and lakehouse storage ------------------------------------------
+CREATE TABLE IF NOT EXISTS metadata.governance_policies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    asset_class VARCHAR(128) NOT NULL,
+    subject VARCHAR(128) NOT NULL,
+    operation VARCHAR(64) NOT NULL,
+    classification VARCHAR(64) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS metadata.lakehouse_assets (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    asset_class VARCHAR(128) NOT NULL,
+    s3_path VARCHAR(2048) NOT NULL,
+    source_name VARCHAR(128) NOT NULL,
+    registered_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS ai.documents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(512) NOT NULL,
+    content TEXT NOT NULL,
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS metadata.traceability_lineage (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lot_id VARCHAR(128) NOT NULL,
+    wafer_id VARCHAR(128) NOT NULL,
+    process_step_id VARCHAR(128) NOT NULL,
+    tool_id VARCHAR(128) NOT NULL,
+    design_version VARCHAR(128) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS metadata.agent_heartbeats (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agent_id VARCHAR(128) NOT NULL,
+    status VARCHAR(64) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 
 -- quality schema is reserved for the future Data Quality Service and is
 -- intentionally left without tables in Phase 1.

@@ -108,3 +108,31 @@ sources:
     raw_bucket: semiconductor-landing
     raw_prefix: files/multiformat
     enabled: true
+
+  telemetry:
+    display_name: Equipment Telemetry
+    endpoint: /telemetry/events
+    method: POST
+    type: REST
+    input_format: JSON
+    schema: schemas/telemetry/telemetry_event.json
+    target_table: raw_events
+    target_schema: metadata
+    stream: quality
+    raw_bucket: semiconductor-landing
+    raw_prefix: telemetry
+    enabled: true
+
+  yield:
+    display_name: Yield Analytics
+    endpoint: /yield/events
+    method: POST
+    type: REST
+    input_format: CSV
+    schema: schemas/yield/yield_event.json
+    target_table: raw_events
+    target_schema: metadata
+    stream: quality
+    raw_bucket: semiconductor-landing
+    raw_prefix: yield
+    enabled: true

@@ -16,7 +16,9 @@ Project owner: ravikanth.kowdeed@gmail.com
 
 ## Source Systems in Semiconductor
 
-This platform ingests events from four common enterprise and factory systems:
+This platform now supports multi-format ingestion for telemetry and yield data, access-controlled governance for IP-sensitive assets, S3 lakehouse-style metadata cataloging, and a lightweight AI intelligence scaffold for RAG-ready retrieval on top of PostgreSQL.
+
+It ingests events from four common enterprise and factory systems:
 
 - MES (Manufacturing Execution System): the real-time factory execution layer
       that tracks wafer lots, enforces route/recipe controls, and provides shop-floor
@@ -43,6 +45,24 @@ Why this matters in semiconductor manufacturing:
 ---
 
 ## Architecture
+
+### End-to-End Data Flow Diagram
+
+```mermaid
+flowchart LR
+    A[Source Systems<br/>MES / ERP / Equipment / PLM / Telemetry / Yield] --> B[Ingestion API<br/>FastAPI routes]
+    B --> C[Format Parser Registry]
+    C --> D[Schema Validation]
+    D --> E[Raw Payload Landing<br/>S3 / Lakehouse]
+    E --> F[Event Publishing<br/>Kinesis]
+    F --> G[Curated Storage<br/>PostgreSQL]
+    G --> H[Governance & Access Control]
+    G --> I[Traceability Spine]
+    G --> J[AI / RAG Intelligence Layer]
+    H --> K[Analysts / BI / Agents]
+    I --> K
+    J --> K
+```
 
 ### Runtime Data Flow (API Ingestion)
 
@@ -114,6 +134,13 @@ sequenceDiagram
 | Testing            | pytest, httpx, moto                      |
 | Observability      | Prometheus, Grafana                      |
 | Containerization   | Docker, Docker Compose                    |
+
+## New Platform Capabilities
+
+- Data ingestion: metadata-driven ingestion for JSON/CSV/XML/text and semiconductor telemetry/yield payloads.
+- Governance: role-based access-control policies for restricted or proprietary data assets.
+- Lakehouse: S3-backed cataloging with asset metadata for downstream analytics and BI workloads.
+- AI intelligence: document indexing and semantic-style search scaffolding for future PostgreSQL + pgvector RAG applications.
 
 ## Repository Structure
 
@@ -255,7 +282,19 @@ curl -X POST http://localhost:8000/api/v1/equipment/events \
 curl -X POST http://localhost:8000/api/v1/plm/events \
       -H "Content-Type: application/json" \
       -d @sample-data/plm/product_lifecycle_event_sample.json
+
+curl -X POST http://localhost:8000/api/v1/telemetry/events \
+      -H "Content-Type: application/json" \
+      -d @sample-data/telemetry/telemetry_sample.json
+
+curl -X POST http://localhost:8000/api/v1/yield/events \
+      -H "Content-Type: text/csv" \
+      -d @sample-data/yield/yield_sample.csv
 ```
+
+## Mock-data validation
+
+The repository includes sample payloads under [sample-data/telemetry](sample-data/telemetry) and [sample-data/yield](sample-data/yield) so you can validate the ingestion path locally with the built-in test harness or a running FastAPI service.
 
 Expected response (`202 Accepted`):
 

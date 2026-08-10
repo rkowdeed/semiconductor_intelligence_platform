@@ -39,3 +39,15 @@ Adding a new downstream capability (Data Quality Service, Catalog Service,
 Knowledge Graph, AI Agents, etc.) means subscribing to the existing Kinesis
 streams or reading the S3 landing zone / curated PostgreSQL tables — the
 ingestion framework itself does not need to change.
+
+## Governance, Lakehouse, Traceability, and AI Scaffolding
+
+The repository now includes the core platform capabilities described in the AZITA technical design:
+
+- Governance: [common/governance/governance_service.py](common/governance/governance_service.py) provides lightweight access-control policies for IP-sensitive assets.
+- Lakehouse catalog: [common/storage/lakehouse_service.py](common/storage/lakehouse_service.py) tracks S3-backed assets and their metadata for downstream analytics.
+- Traceability spine: [common/traceability/traceability_service.py](common/traceability/traceability_service.py) links lots, wafers, process steps, tools, and design versions.
+- Agent orchestration: [common/orchestration/agent_service.py](common/orchestration/agent_service.py) tracks agent heartbeats and recovery signals.
+- Intelligence: [common/ai/intelligence_service.py](common/ai/intelligence_service.py) provides an in-memory document index and search scaffold suitable for RAG-style retrieval.
+
+These services are intentionally lightweight and can be backed by PostgreSQL, S3 manifests, and pgvector in a later phase without changing the ingestion API.
