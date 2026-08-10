@@ -18,6 +18,36 @@ A sovereign semiconductor intelligence platform for ingesting, governing, and an
 3. Valid events are stored in S3 and published for downstream processing.
 4. Curated records are persisted in PostgreSQL and linked to governance, traceability, and AI services.
 
+### Secure AI and Human Consumption Reference Architecture
+
+This reference view shows how Archimedes chip data and telemetry can be exposed securely to AI agents and human users after curation into PostgreSQL.
+
+```mermaid
+flowchart LR
+    A[Archimedes Server<br/>chip data + telemetry] --> B[Ingestion API]
+    B --> C[Validation / Parsing]
+    C --> D[Raw S3 Landing]
+    C --> E[Kinesis]
+    C --> F[Curated PostgreSQL]
+
+    F --> G[Query / App API]
+    G --> H[Authentication / Authorization]
+    H --> I[Rate Limiter]
+    I --> J[LLM Gateway<br/>for AI-agent access]
+    I --> K[Human users / analysts]
+    J --> L[AI agents]
+    J --> F
+
+    F -. lineage / audit .-> M[Observability]
+    G -. policy enforcement .-> N[Governance]
+```
+
+Notes:
+- PostgreSQL remains the trusted curated data store for downstream consumption.
+- Human users consume through the secured API layer.
+- AI agents consume through the LLM gateway path when prompt governance, guardrails, and model routing are required.
+- The rate limiter applies at the shared consumption edge to protect both human and agent-driven workloads.
+
 ## Quick start
 
 ```bash
