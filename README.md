@@ -14,36 +14,44 @@ A sovereign semiconductor intelligence platform for ingesting, governing, and an
 ## Architecture at a glance
 
 1. Source systems send events into the ingestion API.
-2. The parser and validator normalize each payload and check it against schema rules.
-3. Valid events are stored in S3 and published for downstream processing.
-4. Curated records are persisted in PostgreSQL and linked to governance, traceability, and AI services.
+2. The parser and validator normalize each payload and land it in the S3 raw bronze layer.
+3. Transformation and loader jobs move data from bronze to silver and then from silver to gold.
+4. The S3 gold layer publishes to AWS Kinesis / Kafka topics, and a data loader persists the curated operational records into PostgreSQL.
+5. PostgreSQL-backed consumption is then exposed securely to governance, traceability, AI services, and human users.
 
 ### Secure AI and Human Consumption Reference Architecture
 
-This reference view shows how Archimedes chip data and telemetry can be exposed securely to AI agents and human users after curation into PostgreSQL.
+This reference view shows how Archimedes chip data and telemetry flow through S3 bronze, silver, and gold layers, then through AWS Kinesis / Kafka topics into PostgreSQL via a data loader before secure consumption by AI agents and human users.
 
 ```mermaid
 flowchart LR
     A[Archimedes Server<br/>chip data + telemetry] --> B[Ingestion API]
     B --> C[Validation / Parsing]
-    C --> D[Raw S3 Landing]
-    C --> E[Kinesis]
-    C --> F[Curated PostgreSQL]
+    C --> D[S3 Bronze<br/>raw landing]
+    D --> E[Bronze to Silver<br/>transformations / loaders]
+    E --> F[S3 Silver<br/>refined layer]
+    F --> G[Silver to Gold<br/>transformations / loaders]
+    G --> H[S3 Gold<br/>curated layer]
+    H --> I[AWS Kinesis / Kafka Topics]
+    I --> J[PostgreSQL Data Loader]
+    J --> K[Curated PostgreSQL]
 
-    F --> G[Query / App API]
-    G --> H[Authentication / Authorization]
-    H --> I[Rate Limiter]
-    I --> J[LLM Gateway<br/>for AI-agent access]
-    I --> K[Human users / analysts]
-    J --> L[AI agents]
-    J --> F
+    K --> L[Query / App API]
+    L --> M[Authentication / Authorization]
+    M --> N[Rate Limiter]
+    N --> O[LLM Gateway<br/>for AI-agent access]
+    N --> P[Human users / analysts]
+    O --> Q[AI agents]
+    O --> K
 
-    F -. lineage / audit .-> M[Observability]
-    G -. policy enforcement .-> N[Governance]
+    K -. lineage / audit .-> R[Observability]
+    L -. policy enforcement .-> S[Governance]
 ```
 
 Notes:
 - PostgreSQL remains the trusted curated data store for downstream consumption.
+- S3 is organized into bronze, silver, and gold lakehouse layers, with dedicated transformations and loaders between them.
+- AWS Kinesis / Kafka topics are fed from the S3 gold layer, and PostgreSQL is loaded from those topics through a data-loader tier.
 - Human users consume through the secured API layer.
 - AI agents consume through the LLM gateway path when prompt governance, guardrails, and model routing are required.
 - The rate limiter applies at the shared consumption edge to protect both human and agent-driven workloads.
