@@ -24,7 +24,7 @@ A sovereign semiconductor intelligence platform for ingesting, governing, and an
 This reference view shows how Archimedes chip data and telemetry flow through S3 bronze, silver, and gold layers, then through AWS Kinesis / Kafka topics into PostgreSQL via a data loader before secure consumption by AI agents and human users.
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[Archimedes Server<br/>chip data + telemetry] --> B[Ingestion API]
     B --> C[Validation / Parsing]
     C --> D[S3 Bronze<br/>raw landing]
@@ -32,7 +32,7 @@ flowchart LR
     E --> F[S3 Silver<br/>refined layer]
     F --> G[Silver to Gold<br/>transformations / loaders]
     G --> H[S3 Gold<br/>curated layer]
-    H --> I[AWS Kinesis / Kafka Topics]
+    H --> I[AWS Kinesis / Kafka<br/>Topics]
     I --> J[PostgreSQL Data Loader]
     J --> K[Curated PostgreSQL]
 
@@ -74,6 +74,29 @@ Once the services are up, use the Swagger UI at `http://localhost:8000/docs` or 
 | S3 landing zone | Stores raw payloads for lakehouse workflows |
 | PostgreSQL | Stores curated records and audit information |
 | Governance and AI layers | Applies policy rules and supports retrieval-based intelligence |
+
+## Repository layout
+
+| Folder | What it holds |
+| --- | --- |
+| `alembic/` | Database migration environment and revision history for schema evolution. |
+| `common/` | Shared platform code such as AWS wrappers, repositories, governance, orchestration, AI helpers, models, and reusable services. |
+| `config/` | Runtime configuration files for application settings, infrastructure endpoints, logging, and database connectivity. |
+| `docs/` | Architecture notes, presentations, and other project documentation. |
+| `infrastructure/` | Container, LocalStack, and environment bootstrap assets used to run the platform locally or provision supporting services. |
+| `ingestion-service/` | The FastAPI application entrypoints, API routes, and service wiring for ingestion workflows. |
+| `metadata/` | Metadata-driven source definitions, routing, mappings, stream settings, and validation configuration that control ingestion behavior. |
+| `sample-data/` | Example payloads and sample files for manual testing, demos, and validation scenarios. |
+| `schemas/` | JSON schemas and related schema definitions used to validate incoming source payloads. |
+| `scripts/` | Utility scripts for setup, test execution, data normalization, and operational workflows. |
+| `tests/` | Automated tests covering API behavior, metadata validation, governance, and end-to-end platform flows. |
+
+Use this layout as the default guide for placing new code:
+- source onboarding and routing changes usually belong in `metadata/` and `schemas/`
+- reusable logic should go under `common/`
+- API-specific behavior should go under `ingestion-service/`
+- operational helpers belong in `scripts/`
+- documentation updates belong in `docs/` or `README.md`
 
 ## Test and validation
 
