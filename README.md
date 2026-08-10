@@ -1,20 +1,22 @@
-# Semiconductor_Intelligence_Platform(SIP) — Phase 1
+# Semiconductor Intelligence Platform (SIP)
 
-An AWS-native, **metadata-driven** data ingestion framework for semiconductor
-manufacturing data. Phase 1 ingests MES (Manufacturing Execution System)
-events, validates them against JSON Schema, lands the raw payload in S3,
-publishes an event to Kinesis, and writes a curated record to PostgreSQL —
-entirely on your local machine via Docker Compose + LocalStack.
+A sovereign semiconductor intelligence platform for ingesting, governing, and analyzing manufacturing and engineering data. It combines metadata-driven ingestion, S3 lakehouse-style storage, PostgreSQL-backed intelligence, and AI-ready retrieval scaffolding.
 
-Onboarding a new source is a **configuration change, not a code change**:
-add an entry to `metadata/sources.yaml`, drop in a JSON Schema, and
-(optionally) a field mapping — no new endpoint code required.
+## What this repository provides
 
-Project owner: ravikanth.kowdeed@gmail.com
+- Multi-format ingestion for MES, ERP, equipment, PLM, telemetry, and yield payloads
+- Metadata-driven validation and routing for new data sources
+- S3-based raw landing and lakehouse-style asset cataloging
+- Governance controls for IP-sensitive and restricted data
+- Traceability links across lots, wafers, tools, and design versions
+- AI/RAG-ready document indexing and search scaffolding
 
----
+## Architecture at a glance
 
-## Source Systems in Semiconductor
+1. Source systems send events into the ingestion API.
+2. The parser and validator normalize each payload and check it against schema rules.
+3. Valid events are stored in S3 and published for downstream processing.
+4. Curated records are persisted in PostgreSQL and linked to governance, traceability, and AI services.
 
 This platform now supports multi-format ingestion for telemetry and yield data, access-controlled governance for IP-sensitive assets, S3 lakehouse-style metadata cataloging, and a lightweight AI intelligence scaffold for RAG-ready retrieval on top of PostgreSQL.
 
@@ -271,7 +273,7 @@ docker compose exec -T postgres psql -U sap_user -d semiconductor -c "SELECT sou
 - ~4 GB free RAM for the container set
 - Ports free on the host: `5432, 5050, 4566, 8000, 9090, 3000`
 
-## Quick Start
+## Quick start
 
 ```bash
 git clone <this-repo>
@@ -279,168 +281,25 @@ cd Semiconductor_Operations_Data_Platform
 docker compose up --build
 ```
 
-Startup takes roughly 30–60 seconds while Postgres initializes and
-LocalStack provisions the S3 bucket and Kinesis streams.
+Once the services are up, use the Swagger UI at `http://localhost:8000/docs` or call the ingestion endpoints directly.
 
-Once healthy:
+## Key services
 
-| Service           | URL                                      | Credentials                |
-|--------------------|--------------------------------------------|------------------------------|
-| Swagger UI          | http://localhost:8000/docs                  | —                             |
-| Ingestion API        | http://localhost:8000/api/v1                | —                             |
-| Health check         | http://localhost:8000/api/v1/health          | —                             |
-| pgAdmin              | http://localhost:5050                        | admin@sap.local / admin       |
-| LocalStack           | http://localhost:4566                        | —                             |
-| Prometheus            | http://localhost:9090                        | —                             |
-| Grafana                | http://localhost:3000                        | admin / admin                 |
+| Service | Purpose |
+| --- | --- |
+| FastAPI ingestion API | Accepts and routes new events |
+| S3 landing zone | Stores raw payloads for lakehouse workflows |
+| PostgreSQL | Stores curated records and audit information |
+| Governance and AI layers | Applies policy rules and supports retrieval-based intelligence |
 
-## Sending a Test Event
+## Test and validation
 
-```bash
-curl -X POST http://localhost:8000/api/v1/mes/events \
-  -H "Content-Type: application/json" \
-  -d @sample-data/mes/lot_completed_sample.json
-
-curl -X POST http://localhost:8000/api/v1/erp/events \
-      -H "Content-Type: application/json" \
-      -d @sample-data/erp/work_order_sample.json
-
-curl -X POST http://localhost:8000/api/v1/equipment/events \
-      -H "Content-Type: application/json" \
-      -d @sample-data/equipment/equipment_event_sample.json
-
-curl -X POST http://localhost:8000/api/v1/plm/events \
-      -H "Content-Type: application/json" \
-      -d @sample-data/plm/product_lifecycle_event_sample.json
-
-curl -X POST http://localhost:8000/api/v1/telemetry/events \
-      -H "Content-Type: application/json" \
-      -d @sample-data/telemetry/telemetry_sample.json
-
-curl -X POST http://localhost:8000/api/v1/yield/events \
-      -H "Content-Type: text/csv" \
-      -d @sample-data/yield/yield_sample.csv
+```powershell
+./scripts/run_pytest.ps1 -q tests/test_api.py -k "validation_ui"
 ```
 
-## Mock-data validation
+The repository includes sample payloads and smoke-test flows for telemetry, yield, and core ingestion paths.
 
-The repository includes sample payloads under [sample-data/telemetry](sample-data/telemetry) and [sample-data/yield](sample-data/yield) so you can validate the ingestion path locally with the built-in test harness or a running FastAPI service.
+## Project owner
 
-Expected response (`202 Accepted`):
-
-```json
-{
-  "request_id": "…",
-  "source": "mes",
-  "status": "ACCEPTED",
-  "s3_key": "mes/2026/07/15/mes-<request_id>.json",
-  "stream": "mes-events",
-  "sequence_number": "…",
-  "curated_record_id": "…"
-}
-```
-
-### Verifying each stage
-
-```bash
-# Raw payload landed in S3
-awslocal --endpoint-url=http://localhost:4566 s3 ls s3://semiconductor-landing/mes/ --recursive
-
-# Event published to Kinesis
-awslocal --endpoint-url=http://localhost:4566 kinesis describe-stream --stream-name mes-events
-
-# Curated record in PostgreSQL
-docker exec -it sap-postgres psql -U sap_user -d semiconductor \
-  -c "SELECT lot_id, recipe_id, equipment_id, wafer_count FROM mdm.lot_master ORDER BY created_at DESC LIMIT 5;"
-```
-
-(`awslocal` ships with LocalStack; alternatively use plain `aws --endpoint-url=http://localhost:4566 ...`.)
-
-### Validation failure example
-
-```bash
-curl -X POST http://localhost:8000/api/v1/mes/events \
-  -H "Content-Type: application/json" \
-  -d @sample-data/mes/lot_completed_invalid_sample.json
-```
-
-Returns `400 Bad Request` with a structured list of schema violations.
-
-## Onboarding a New Source (no code changes)
-
-1. Add a JSON Schema under `schemas/<source>/<event>.json`.
-2. Add an entry to `metadata/sources.yaml` with `enabled: true`.
-3. (Optional) Add a field mapping to `metadata/mappings.yaml` if the source
-   should populate a dedicated curated table; otherwise payloads land in the
-   generic `metadata.raw_events` table automatically.
-4. (Optional) Add a routing override to `metadata/routing.yaml`.
-5. Restart the ingestion-service container — the new endpoint is registered
-   automatically from metadata at startup.
-
-## Running Tests
-
-Tests run entirely offline (AWS mocked via `moto`, PostgreSQL simulated with
-in-memory SQLite), so `docker compose up` is **not** required:
-
-```bash
-pip install -r requirements.txt --break-system-packages
-pytest
-```
-
-59 tests cover: schema validation, the REST API (happy path + validation
-failure + malformed JSON), the Repository Pattern, the Kinesis publisher, S3
-upload, and the configuration loader.
-
-To run the suite inside the running container instead:
-
-```bash
-docker compose exec ingestion-service pytest /app/tests
-```
-
-## Configuration
-
-All runtime configuration lives in `.env` and `config/*.yaml`, with
-`${VAR:default}` interpolation against environment variables. Key variables:
-
-| Variable                | Purpose                                  | Default                     |
-|--------------------------|--------------------------------------------|-------------------------------|
-| `DATABASE_URL`             | SQLAlchemy connection string                | see `.env`                     |
-| `AWS_ENDPOINT_URL`          | LocalStack endpoint                          | `http://localstack:4566`        |
-| `S3_LANDING_BUCKET`          | Raw payload bucket                            | `semiconductor-landing`          |
-| `KINESIS_MES_STREAM`          | Physical Kinesis stream for MES events          | `mes-events`                      |
-| `LOG_LEVEL`                     | structlog / stdlib log level                     | `INFO`                              |
-
-## Health & Observability
-
-`GET /api/v1/health` aggregates the status of `database`, `localstack`,
-`kinesis`, `s3`, and `application`, returning `503` if any component is
-down. `GET /api/v1/ready` is a lightweight liveness/readiness probe for
-container orchestrators.
-
-Every request is logged as a single JSON line (via `structlog`) containing
-`request_id`, `source`, `stream`, `timestamp`, `status`, and `duration`.
-
-## Definition of Done
-
-- [x] `docker compose up` brings up all six containers healthy
-- [x] Swagger UI available at `/docs`
-- [x] `POST /api/v1/mes/events` functional end-to-end
-- [x] `POST /api/v1/erp/events` functional end-to-end
-- [x] `POST /api/v1/equipment/events` functional end-to-end
-- [x] `POST /api/v1/plm/events` functional end-to-end
-- [x] Payload validation returns `400` on schema violations
-- [x] Raw payload uploaded to the LocalStack S3 bucket
-- [x] Event published to the `mes-events` Kinesis stream
-- [x] Curated record persisted to PostgreSQL (`mdm.lot_master`)
-- [x] Structured JSON logs + passing `/api/v1/health`
-- [x] Full `pytest` suite passes (59/59)
-
-## Future Compatibility
-
-The metadata-driven design leaves room to add, without modifying the
-ingestion framework itself: a Metadata Service, MDM Service, Data Quality
-Service, Catalog Service, Semantic Layer, Knowledge Graph, and AI Agents —
-each can subscribe to the existing Kinesis streams or read from the S3
-landing zone / curated PostgreSQL tables.
-#   s e m i c o n d u c t o r _ i n t e l l i g e n c e _ p l a t f o r m  
- 
+ravikanth.kowdeed@gmail.com

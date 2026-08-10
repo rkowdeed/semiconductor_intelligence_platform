@@ -21,6 +21,7 @@ from api.exception_handlers import register_exception_handlers
 from api.health_routes import router as health_router
 from api.middleware import RequestLoggingMiddleware
 from api.routes import build_ingestion_router
+from api.ui_routes import router as ui_router
 from common.config.loader import config_loader
 from common.logger.logger import configure_logging, get_logger
 
@@ -62,6 +63,7 @@ api_base_url = app_config["api"]["base_url"]
 
 app.include_router(health_router, prefix=api_base_url)
 app.include_router(config_router, prefix=api_base_url)
+app.include_router(ui_router)
 app.include_router(build_ingestion_router(), prefix=api_base_url)
 
 
