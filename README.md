@@ -2,6 +2,14 @@
 
 A sovereign semiconductor intelligence platform for ingesting, governing, and analyzing manufacturing and engineering data. It combines metadata-driven ingestion, S3 lakehouse-style storage, PostgreSQL-backed intelligence, and AI-ready retrieval scaffolding.
 
+## Start here
+
+If you are new to this repository, read these in order:
+
+1. [docs/developer-guide.md](docs/developer-guide.md) - end-to-end developer onboarding, setup, configuration, run, verification, source onboarding, and troubleshooting guide.
+2. [docs/architecture.md](docs/architecture.md) - architecture notes explaining the metadata-driven design and platform components.
+3. [docker-compose.yml](docker-compose.yml) - the local runtime stack.
+
 ## What this repository provides
 
 - Multi-format ingestion for MES, ERP, equipment, PLM, telemetry, and yield payloads
@@ -82,7 +90,7 @@ Once the services are up, use the Swagger UI at `http://localhost:8000/docs` or 
 | `alembic/` | Database migration environment and revision history for schema evolution. |
 | `common/` | Shared platform code such as AWS wrappers, repositories, governance, orchestration, AI helpers, models, and reusable services. |
 | `config/` | Runtime configuration files for application settings, infrastructure endpoints, logging, and database connectivity. |
-| `docs/` | Architecture notes, presentations, and other project documentation. |
+| `docs/` | Architecture notes, presentations, onboarding guides, and other project documentation. |
 | `infrastructure/` | Container, LocalStack, and environment bootstrap assets used to run the platform locally or provision supporting services. |
 | `ingestion-service/` | The FastAPI application entrypoints, API routes, and service wiring for ingestion workflows. |
 | `metadata/` | Metadata-driven source definitions, routing, mappings, stream settings, and validation configuration that control ingestion behavior. |
@@ -105,6 +113,12 @@ Use this layout as the default guide for placing new code:
 ```
 
 The repository includes sample payloads and smoke-test flows for telemetry, yield, and core ingestion paths.
+
+## Documentation
+
+- [docs/developer-guide.md](docs/developer-guide.md)
+- [docs/architecture.md](docs/architecture.md)
+- [docs/end_to_end_test_result.md](docs/end_to_end_test_result.md)
 
 ## Project owner
 
