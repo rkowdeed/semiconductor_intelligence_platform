@@ -12,8 +12,8 @@ For a successful ingestion request, the platform:
 2. Resolves source metadata from YAML files.
 3. Parses the payload into a canonical Python dictionary.
 4. Validates the payload against a JSON Schema.
-5. Writes the raw payload to S3-compatible storage in LocalStack.
-6. Publishes an event to a Kinesis stream in LocalStack.
+5. Writes the raw payload to Amazon S3.
+6. Publishes an event to Amazon Kinesis.
 7. Writes a curated record to PostgreSQL.
 8. Writes an audit entry to `metadata.ingestion_log`.
 
@@ -35,7 +35,7 @@ Use this section when you want to understand where to look before changing anyth
 | [metadata/](../metadata) | Source registry and metadata-driven runtime behavior |
 | [schemas/](../schemas) | Per-source JSON Schemas |
 | [scripts/](../scripts) | Verification, smoke testing, SQL bootstrap helpers, and normalization utilities |
-| [infrastructure/](../infrastructure) | Dockerfile, LocalStack bootstrap, Prometheus config, helper scripts |
+| [infrastructure/](../infrastructure) | Dockerfile, optional LocalStack bootstrap assets, Prometheus config, helper scripts |
 | [sample-data/](../sample-data) | Example payloads for manual testing and end-to-end validation |
 | [tests/](../tests) | Offline automated test suite |
 | [docs/](.) | Design notes and documentation |
@@ -44,13 +44,12 @@ Use this section when you want to understand where to look before changing anyth
 
 ### Services started by Docker Compose
 
-[docker-compose.yml](../docker-compose.yml) starts six services:
+[docker-compose.yml](../docker-compose.yml) starts five services:
 
 | Service | Container name | Purpose | Port |
 |---|---|---|---:|
 | PostgreSQL | `sap-postgres` | Curated data, audit logs, and platform tables | 5432 |
 | pgAdmin | `sap-pgadmin` | PostgreSQL UI | 5050 |
-| LocalStack | `sap-localstack` | Local AWS APIs for S3, Kinesis, CloudWatch, and Secrets Manager | 4566 |
 | Ingestion service | `sap-ingestion-service` | FastAPI HTTP API | 8000 |
 | Prometheus | `sap-prometheus` | Metrics scraping | 9090 |
 | Grafana | `sap-grafana` | Dashboards | 3000 |
@@ -58,13 +57,12 @@ Use this section when you want to understand where to look before changing anyth
 ### What initializes each service
 
 - PostgreSQL runs [scripts/sql/init.sql](../scripts/sql/init.sql) on first startup.
-- LocalStack runs [infrastructure/localstack/init-aws.sh](../infrastructure/localstack/init-aws.sh) when it becomes ready.
 - The ingestion image is built from [infrastructure/docker/Dockerfile](../infrastructure/docker/Dockerfile).
 - Prometheus uses [infrastructure/prometheus/prometheus.yml](../infrastructure/prometheus/prometheus.yml).
 
-### What LocalStack provisions automatically
+### AWS resources required before startup
 
-When LocalStack starts, [infrastructure/localstack/init-aws.sh](../infrastructure/localstack/init-aws.sh) creates:
+Before startup, ensure these AWS resources already exist in your account:
 
 - S3 bucket `semiconductor-landing`
 - Kinesis stream `mes-events`
@@ -72,7 +70,7 @@ When LocalStack starts, [infrastructure/localstack/init-aws.sh](../infrastructur
 - Kinesis stream `quality-events`
 - Kinesis stream `plm-events`
 
-If S3 uploads or Kinesis publishes fail locally, check this script first.
+The service does not auto-provision these resources. If S3 uploads or Kinesis publishes fail, verify the bucket/stream names in [metadata/streams.yaml](../metadata/streams.yaml), [metadata/sources.yaml](../metadata/sources.yaml), and [.env](../.env).
 
 ## 4. Request lifecycle, step by step
 
@@ -180,7 +178,7 @@ Configuration is split between environment variables and YAML files.
 
 - PostgreSQL
 - pgAdmin
-- LocalStack
+- AWS account credentials
 - S3 bucket name
 - Kinesis stream names
 - Grafana
@@ -259,7 +257,7 @@ This is the recommended path for new developers.
 
 - Docker Desktop or Docker Engine with Compose v2
 - Python 3.12 if you also want to run tests or host scripts outside containers
-- Free host ports: `5432`, `5050`, `4566`, `8000`, `9090`, `3000`
+- Free host ports: `5432`, `5050`, `8000`, `9090`, `3000`
 
 #### Startup
 
@@ -295,10 +293,10 @@ curl.exe http://localhost:8000/api/v1/health
 
 This is useful for faster edit/reload loops.
 
-1. Start only PostgreSQL and LocalStack:
+1. Start only PostgreSQL:
 
    ```powershell
-   docker compose up -d postgres localstack
+   docker compose up -d postgres
    ```
 
 2. Create and activate a Python environment.
@@ -316,10 +314,8 @@ This is useful for faster edit/reload loops.
    $env:POSTGRES_PASSWORD = "sap_password"
    $env:POSTGRES_DB = "semiconductor"
    $env:DATABASE_URL = "postgresql+psycopg2://$env:POSTGRES_USER`:$env:POSTGRES_PASSWORD@localhost:5432/$env:POSTGRES_DB"
-   $env:AWS_ENDPOINT_URL = "http://localhost:4566"
-   $env:AWS_REGION = "us-east-1"
-   $env:AWS_ACCESS_KEY_ID = "test"
-   $env:AWS_SECRET_ACCESS_KEY = "test"
+   $env:AWS_REGION = "ap-south-2"
+   $env:AWS_PROFILE = "agent-toolkit"
    ```
 
 5. Start the API:
@@ -397,13 +393,13 @@ Successful ingestion returns HTTP 202 and a JSON object with:
 #### S3
 
 ```powershell
-docker compose exec -T localstack awslocal s3 ls s3://semiconductor-landing --recursive
+aws --region ap-south-2 --profile agent-toolkit s3 ls s3://semiconductor-landing --recursive
 ```
 
 #### Kinesis
 
 ```powershell
-docker compose exec -T localstack awslocal kinesis describe-stream --stream-name mes-events
+aws --region ap-south-2 --profile agent-toolkit kinesis describe-stream --stream-name mes-events
 ```
 
 #### PostgreSQL
@@ -538,7 +534,7 @@ docker compose logs ingestion-service --tail=200
 Symptoms:
 
 - Compose exits during startup
-- container shows bind errors for `5432`, `5050`, `4566`, `8000`, `9090`, or `3000`
+- container shows bind errors for `5432`, `5050`, `8000`, `9090`, or `3000`
 
 What to do:
 
@@ -558,13 +554,13 @@ What to check:
 1. `curl.exe http://localhost:8000/api/v1/health`
 2. `docker compose ps`
 3. `docker compose logs postgres --tail=200`
-4. `docker compose logs localstack --tail=200`
+4. verify AWS credentials with `aws --profile agent-toolkit sts get-caller-identity`
 
 Common causes:
 
 - PostgreSQL not healthy yet
-- LocalStack did not finish provisioning streams
-- wrong environment values for `DATABASE_URL` or `AWS_ENDPOINT_URL`
+- required S3/Kinesis resources are missing in AWS
+- wrong environment values for `DATABASE_URL`, `AWS_REGION`, or `AWS_PROFILE`
 
 ### Ingestion returns HTTP 400
 
@@ -581,12 +577,12 @@ What to do:
 2. Inspect the matching schema under [schemas/](../schemas).
 3. Check the source `input_format` in [metadata/sources.yaml](../metadata/sources.yaml).
 
-### S3 or Kinesis checks fail in LocalStack
+### S3 or Kinesis checks fail in AWS
 
 What to check:
 
-1. `docker compose logs localstack --tail=200`
-2. confirm [infrastructure/localstack/init-aws.sh](../infrastructure/localstack/init-aws.sh) ran
+1. verify your session with `aws --profile agent-toolkit sts get-caller-identity`
+2. verify the resources exist in the configured region
 3. re-check the stream names in [metadata/streams.yaml](../metadata/streams.yaml)
 4. make sure the bucket name matches [.env](../.env) and [config/aws.yaml](../config/aws.yaml)
 

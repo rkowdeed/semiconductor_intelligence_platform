@@ -75,7 +75,7 @@ def test_health_endpoint_returns_ok(client: TestClient) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "UP"
-    for component in ("database", "localstack", "kinesis", "s3", "application"):
+    for component in ("database", "aws", "kinesis", "s3", "application"):
         assert body["components"][component]["status"] == "UP"
 
 

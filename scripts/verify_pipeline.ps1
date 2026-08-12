@@ -7,6 +7,9 @@ param(
     [string]$DbUser = "sap_user",
     [string]$DbName = "semiconductor",
     [string]$DbTable = "mdm.lot_master",
+    [string]$AwsProfile = "agent-toolkit",
+    [string]$AwsRegion = "ap-south-2",
+    [string]$AwsEndpointUrl = "",
     [string]$NormalizeSourcePrefix = "files/native",
     [string]$NormalizeOutputPrefix = "files/native/normalized",
     [switch]$IngestSample,
@@ -91,6 +94,26 @@ function Invoke-Step {
     }
 }
 
+function Invoke-AwsCli {
+    param(
+        [string[]]$Arguments,
+        [string]$StepName
+    )
+
+    $awsArgs = @("--region", $AwsRegion)
+    if ($AwsProfile) {
+        $awsArgs += @("--profile", $AwsProfile)
+    }
+    if ($AwsEndpointUrl) {
+        $awsArgs += @("--endpoint-url", $AwsEndpointUrl)
+    }
+    $awsArgs += $Arguments
+
+    return Invoke-Step -StepName $StepName -Command {
+        & aws @awsArgs
+    }
+}
+
 function Get-ExecutedCommand {
     $cmd = ".\\scripts\\verify_pipeline.ps1"
     if ($IngestSample) {
@@ -98,6 +121,15 @@ function Get-ExecutedCommand {
     }
     if ($IngestAllSamples) {
         $cmd += " -IngestAllSamples"
+    }
+    if ($AwsProfile -ne "agent-toolkit") {
+        $cmd += " -AwsProfile `"$AwsProfile`""
+    }
+    if ($AwsRegion -ne "ap-south-2") {
+        $cmd += " -AwsRegion `"$AwsRegion`""
+    }
+    if ($AwsEndpointUrl) {
+        $cmd += " -AwsEndpointUrl `"$AwsEndpointUrl`""
     }
     if ($NormalizeSourcePrefix -ne "files/native") {
         $cmd += " -NormalizeSourcePrefix `"$NormalizeSourcePrefix`""
@@ -231,6 +263,9 @@ import boto3
 
 bucket = r"$Bucket"
 prefix = r"$NormalizeSourcePrefix".strip("/")
+profile = r"$AwsProfile".strip()
+region = r"$AwsRegion".strip()
+endpoint = r"$AwsEndpointUrl".strip()
 
 files = [
     r"sample-data/files/native/system_health_sample.xml",
@@ -239,13 +274,8 @@ files = [
     r"sample-data/files/native/benchmark_sample.parquet",
 ]
 
-s3 = boto3.client(
-    "s3",
-    endpoint_url="http://localhost:4566",
-    region_name="us-east-1",
-    aws_access_key_id="test",
-    aws_secret_access_key="test",
-)
+session = boto3.Session(profile_name=profile or None, region_name=region or None)
+s3 = session.client("s3", endpoint_url=endpoint or None)
 
 for rel in files:
     path = Path(rel)
@@ -261,18 +291,24 @@ print(f"uploaded={len(files)}")
             & $pythonCmd -c $uploadScript
         } | Out-Null
 
-        $env:AWS_ENDPOINT_URL = "http://localhost:4566"
-        $env:AWS_REGION = "us-east-1"
-        $env:AWS_ACCESS_KEY_ID = "test"
-        $env:AWS_SECRET_ACCESS_KEY = "test"
+        $env:AWS_REGION = $AwsRegion
+        if ($AwsProfile) {
+            $env:AWS_PROFILE = $AwsProfile
+        }
+        if ($AwsEndpointUrl) {
+            $env:AWS_ENDPOINT_URL = $AwsEndpointUrl
+        }
+        else {
+            Remove-Item Env:AWS_ENDPOINT_URL -ErrorAction SilentlyContinue
+        }
 
         Invoke-Step -StepName "Run S3 normalization script" -Command {
             & $pythonCmd "scripts/normalize_s3_files.py" --source file_multiformat --bucket $Bucket --source-prefix $NormalizeSourcePrefix --normalized-prefix $NormalizeOutputPrefix --format AUTO
         } | Out-Null
 
-        $normalizedListRaw = Invoke-Step -StepName "List normalized objects" -Command {
-            docker compose exec -T localstack awslocal s3 ls "s3://$Bucket/$NormalizeOutputPrefix/" --recursive
-        }
+        $normalizedListRaw = Invoke-AwsCli -StepName "List normalized objects" -Arguments @(
+            "s3", "ls", "s3://$Bucket/$NormalizeOutputPrefix/", "--recursive"
+        )
 
         $normalizedLines = @($normalizedListRaw -split "`r?`n" | Where-Object { $_.Trim().Length -gt 0 })
         $normalizedCount = 0
@@ -291,13 +327,13 @@ print(f"uploaded={len(files)}")
 }
 
 try {
-    Invoke-Step -StepName "S3 bucket check" -Command {
-        docker compose exec -T localstack awslocal s3api head-bucket --bucket $Bucket
-    } | Out-Null
+    Invoke-AwsCli -StepName "S3 bucket check" -Arguments @(
+        "s3api", "head-bucket", "--bucket", $Bucket
+    ) | Out-Null
 
-    $s3ListRaw = Invoke-Step -StepName "S3 object listing" -Command {
-        docker compose exec -T localstack awslocal s3 ls "s3://$Bucket" --recursive
-    }
+    $s3ListRaw = Invoke-AwsCli -StepName "S3 object listing" -Arguments @(
+        "s3", "ls", "s3://$Bucket", "--recursive"
+    )
 
     $s3Lines = @($s3ListRaw -split "`r?`n" | Where-Object { $_.Trim().Length -gt 0 })
     $s3Count = 0
@@ -322,9 +358,9 @@ catch {
 
 foreach ($source in $sourceChecks) {
     try {
-        $s3ListRaw = Invoke-Step -StepName "S3 object listing for $($source.Name)" -Command {
-            docker compose exec -T localstack awslocal s3 ls "s3://$Bucket" --recursive
-        }
+        $s3ListRaw = Invoke-AwsCli -StepName "S3 object listing for $($source.Name)" -Arguments @(
+            "s3", "ls", "s3://$Bucket", "--recursive"
+        )
 
         $s3Lines = @($s3ListRaw -split "`r?`n" | Where-Object { $_.Trim().Length -gt 0 })
         $s3Count = 0
@@ -349,23 +385,23 @@ foreach ($source in $sourceChecks) {
 }
 
 try {
-    $streamStatus = Invoke-Step -StepName "Kinesis stream status" -Command {
-        docker compose exec -T localstack awslocal kinesis describe-stream --stream-name $Stream --query "StreamDescription.StreamStatus" --output text
-    }
+    $streamStatus = Invoke-AwsCli -StepName "Kinesis stream status" -Arguments @(
+        "kinesis", "describe-stream", "--stream-name", $Stream, "--query", "StreamDescription.StreamStatus", "--output", "text"
+    )
 
     $streamReady = ($streamStatus.Trim() -eq "ACTIVE")
 
-    $shardId = Invoke-Step -StepName "Kinesis shard id" -Command {
-        docker compose exec -T localstack awslocal kinesis describe-stream --stream-name $Stream --query "StreamDescription.Shards[0].ShardId" --output text
-    }
+    $shardId = Invoke-AwsCli -StepName "Kinesis shard id" -Arguments @(
+        "kinesis", "describe-stream", "--stream-name", $Stream, "--query", "StreamDescription.Shards[0].ShardId", "--output", "text"
+    )
 
-    $iterator = Invoke-Step -StepName "Kinesis shard iterator" -Command {
-        docker compose exec -T localstack awslocal kinesis get-shard-iterator --stream-name $Stream --shard-id $shardId --shard-iterator-type TRIM_HORIZON --query "ShardIterator" --output text
-    }
+    $iterator = Invoke-AwsCli -StepName "Kinesis shard iterator" -Arguments @(
+        "kinesis", "get-shard-iterator", "--stream-name", $Stream, "--shard-id", $shardId, "--shard-iterator-type", "TRIM_HORIZON", "--query", "ShardIterator", "--output", "text"
+    )
 
-    $recordsCountRaw = Invoke-Step -StepName "Kinesis records" -Command {
-        docker compose exec -T localstack awslocal kinesis get-records --shard-iterator $iterator --limit 10 --query "length(Records)" --output text
-    }
+    $recordsCountRaw = Invoke-AwsCli -StepName "Kinesis records" -Arguments @(
+        "kinesis", "get-records", "--shard-iterator", $iterator, "--limit", "10", "--query", "length(Records)", "--output", "text"
+    )
 
     $recordsCount = 0
     [void][int]::TryParse(($recordsCountRaw.Trim()), [ref]$recordsCount)
@@ -377,23 +413,23 @@ catch {
 
 foreach ($source in $sourceChecks) {
     try {
-        $streamStatus = Invoke-Step -StepName "Kinesis stream status for $($source.Name)" -Command {
-            docker compose exec -T localstack awslocal kinesis describe-stream --stream-name $($source.Stream) --query "StreamDescription.StreamStatus" --output text
-        }
+        $streamStatus = Invoke-AwsCli -StepName "Kinesis stream status for $($source.Name)" -Arguments @(
+            "kinesis", "describe-stream", "--stream-name", $source.Stream, "--query", "StreamDescription.StreamStatus", "--output", "text"
+        )
 
         $streamReady = ($streamStatus.Trim() -eq "ACTIVE")
 
-        $shardId = Invoke-Step -StepName "Kinesis shard id for $($source.Name)" -Command {
-            docker compose exec -T localstack awslocal kinesis describe-stream --stream-name $($source.Stream) --query "StreamDescription.Shards[0].ShardId" --output text
-        }
+        $shardId = Invoke-AwsCli -StepName "Kinesis shard id for $($source.Name)" -Arguments @(
+            "kinesis", "describe-stream", "--stream-name", $source.Stream, "--query", "StreamDescription.Shards[0].ShardId", "--output", "text"
+        )
 
-        $iterator = Invoke-Step -StepName "Kinesis shard iterator for $($source.Name)" -Command {
-            docker compose exec -T localstack awslocal kinesis get-shard-iterator --stream-name $($source.Stream) --shard-id $shardId --shard-iterator-type TRIM_HORIZON --query "ShardIterator" --output text
-        }
+        $iterator = Invoke-AwsCli -StepName "Kinesis shard iterator for $($source.Name)" -Arguments @(
+            "kinesis", "get-shard-iterator", "--stream-name", $source.Stream, "--shard-id", $shardId, "--shard-iterator-type", "TRIM_HORIZON", "--query", "ShardIterator", "--output", "text"
+        )
 
-        $recordsCountRaw = Invoke-Step -StepName "Kinesis records for $($source.Name)" -Command {
-            docker compose exec -T localstack awslocal kinesis get-records --shard-iterator $iterator --limit 10 --query "length(Records)" --output text
-        }
+        $recordsCountRaw = Invoke-AwsCli -StepName "Kinesis records for $($source.Name)" -Arguments @(
+            "kinesis", "get-records", "--shard-iterator", $iterator, "--limit", "10", "--query", "length(Records)", "--output", "text"
+        )
 
         $recordsCount = 0
         [void][int]::TryParse(($recordsCountRaw.Trim()), [ref]$recordsCount)

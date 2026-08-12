@@ -36,29 +36,6 @@ services:
     networks:
       - sap-network
 
-  localstack:
-    image: localstack/localstack:3.7
-    container_name: sap-localstack
-    restart: unless-stopped
-    environment:
-      SERVICES: s3,kinesis,cloudwatch,secretsmanager
-      DEBUG: 0
-      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
-      PERSISTENCE: 0
-    ports:
-      - "4566:4566"
-    volumes:
-      - localstack_data:/var/lib/localstack
-      - ./infrastructure/localstack/init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
-      interval: 5s
-      timeout: 5s
-      retries: 15
-    networks:
-      - sap-network
-
   ingestion-service:
     build:
       context: .
@@ -69,14 +46,15 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-sap_user}:${POSTGRES_PASSWORD:-sap_password}@postgres:5432/${POSTGRES_DB:-semiconductor}
-      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_PROFILE: ${AWS_PROFILE:-default}
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
-      localstack:
-        condition: service_healthy
+    volumes:
+      - ${USERPROFILE}/.aws:/root/.aws:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/ready"]
       interval: 10s
@@ -119,4 +97,3 @@ networks:
 
 volumes:
   postgres_data:
-  localstack_data:

@@ -15,6 +15,13 @@ from common.logger.logger import get_logger
 logger = get_logger(__name__)
 
 
+def _clean_optional(value: str | None) -> str | None:
+    if value is None:
+        return None
+    stripped = value.strip()
+    return stripped if stripped else None
+
+
 class KinesisPublisher:
     """Wraps boto3 Kinesis operations needed by the ingestion framework."""
 
@@ -25,17 +32,29 @@ class KinesisPublisher:
         access_key_id: str | None = None,
         secret_access_key: str | None = None,
     ) -> None:
-        self._endpoint_url = (
-            endpoint_url if endpoint_url is not None else os.environ.get("AWS_ENDPOINT_URL")
-        )
+        if endpoint_url is not None:
+            self._endpoint_url = _clean_optional(endpoint_url)
+        else:
+            self._endpoint_url = _clean_optional(os.environ.get("AWS_ENDPOINT_URL"))
         self._region_name = region_name or os.environ.get("AWS_REGION", "us-east-1")
+        resolved_access_key = _clean_optional(
+            access_key_id if access_key_id is not None else os.environ.get("AWS_ACCESS_KEY_ID")
+        )
+        resolved_secret_key = _clean_optional(
+            secret_access_key
+            if secret_access_key is not None
+            else os.environ.get("AWS_SECRET_ACCESS_KEY")
+        )
+        client_kwargs: dict[str, Any] = {
+            "endpoint_url": self._endpoint_url,
+            "region_name": self._region_name,
+        }
+        if resolved_access_key and resolved_secret_key:
+            client_kwargs["aws_access_key_id"] = resolved_access_key
+            client_kwargs["aws_secret_access_key"] = resolved_secret_key
         self._client = boto3.client(
             "kinesis",
-            endpoint_url=self._endpoint_url,
-            region_name=self._region_name,
-            aws_access_key_id=access_key_id or os.environ.get("AWS_ACCESS_KEY_ID", "test"),
-            aws_secret_access_key=secret_access_key
-            or os.environ.get("AWS_SECRET_ACCESS_KEY", "test"),
+            **client_kwargs,
         )
 
     def ensure_stream(self, stream_name: str, shard_count: int = 1) -> None:

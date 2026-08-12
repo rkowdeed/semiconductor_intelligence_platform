@@ -1,7 +1,7 @@
 """Health and readiness endpoints.
 
 GET /health reports the status of every downstream dependency (database,
-localstack, kinesis, s3, application) so operators and orchestrators can
+aws, kinesis, s3, application) so operators and orchestrators can
 make informed decisions.
 """
 
@@ -45,15 +45,13 @@ def health(
     database_component = _check_database(session)
     s3_component = _check_s3(s3_client)
     kinesis_component = _check_kinesis(kinesis_publisher)
-    # localstack is considered healthy if either AWS-facing dependency
-    # backed by it responds
-    localstack_status = (
+    aws_status = (
         "UP" if s3_component.status == "UP" or kinesis_component.status == "UP" else "DOWN"
     )
 
     components = {
         "database": database_component,
-        "localstack": HealthComponent(status=localstack_status),
+        "aws": HealthComponent(status=aws_status),
         "kinesis": kinesis_component,
         "s3": s3_component,
         "application": HealthComponent(status="UP"),

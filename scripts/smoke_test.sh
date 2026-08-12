@@ -3,17 +3,18 @@
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8000/api/v1}"
-AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL:-http://localhost:4566}"
+AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL:-}"
 AWS_REGION="${AWS_REGION:-us-east-1}"
+AWS_PROFILE="${AWS_PROFILE:-default}"
 NORMALIZE_BUCKET="${NORMALIZE_BUCKET:-semiconductor-landing}"
 
-if [[ -z "${AWS_ACCESS_KEY_ID:-}" ]]; then
-  export AWS_ACCESS_KEY_ID="test"
-fi
-if [[ -z "${AWS_SECRET_ACCESS_KEY:-}" ]]; then
-  export AWS_SECRET_ACCESS_KEY="test"
-fi
 export AWS_REGION
+export AWS_PROFILE
+
+AWS_CLI=(aws --region "${AWS_REGION}" --profile "${AWS_PROFILE}")
+if [[ -n "${AWS_ENDPOINT_URL}" ]]; then
+  AWS_CLI+=(--endpoint-url "${AWS_ENDPOINT_URL}")
+fi
 
 echo "==> Health check"
 curl -sf "${BASE_URL}/health" | python3 -m json.tool
@@ -64,11 +65,10 @@ for native_file in sample-data/files/native/*.{xml,csv,txt,parquet}; do
   [[ -e "${native_file}" ]] || continue
   key="files/native/$(basename "${native_file}")"
   echo "   -> s3://${NORMALIZE_BUCKET}/${key}"
-  docker compose exec -T localstack awslocal s3 cp "${native_file}" "s3://${NORMALIZE_BUCKET}/${key}" >/dev/null
+  "${AWS_CLI[@]}" s3 cp "${native_file}" "s3://${NORMALIZE_BUCKET}/${key}" >/dev/null
 done
 
 echo "==> Running normalization script"
-AWS_ENDPOINT_URL="${AWS_ENDPOINT_URL}" \
 python3 scripts/normalize_s3_files.py \
   --source file_multiformat \
   --bucket "${NORMALIZE_BUCKET}" \
@@ -77,7 +77,7 @@ python3 scripts/normalize_s3_files.py \
   --format AUTO
 
 echo "==> Listing normalized JSON objects"
-docker compose exec -T localstack awslocal s3 ls "s3://${NORMALIZE_BUCKET}/files/native/normalized/" --recursive
+"${AWS_CLI[@]}" s3 ls "s3://${NORMALIZE_BUCKET}/files/native/normalized/" --recursive
 
 echo "==> Posting invalid MES event (expect 400)"
 curl -s -o /dev/stderr -w "HTTP %{http_code}\n" -X POST "${BASE_URL}/mes/events" \

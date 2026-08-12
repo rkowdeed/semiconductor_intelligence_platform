@@ -1,6 +1,6 @@
 # ---------------------------------------------------------------------------
-# Kinesis stream definitions. Used at LocalStack bootstrap time and by the
-# KinesisPublisher to resolve logical stream names -> physical stream names.
+# Kinesis stream definitions used by KinesisPublisher to resolve logical
+# stream names -> physical stream names in the configured AWS account.
 # ---------------------------------------------------------------------------
 streams:
 

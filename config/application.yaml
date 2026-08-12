@@ -28,7 +28,7 @@ metadata:
 health:
   checks:
     - database
-    - localstack
+    - aws
     - kinesis
     - s3
     - application

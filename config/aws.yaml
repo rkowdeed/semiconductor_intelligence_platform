@@ -1,8 +1,8 @@
 aws:
   region: ${AWS_REGION:us-east-1}
-  endpoint_url: ${AWS_ENDPOINT_URL:http://localstack:4566}
-  access_key_id: ${AWS_ACCESS_KEY_ID:test}
-  secret_access_key: ${AWS_SECRET_ACCESS_KEY:test}
+  endpoint_url: ${AWS_ENDPOINT_URL:}
+  access_key_id: ${AWS_ACCESS_KEY_ID:}
+  secret_access_key: ${AWS_SECRET_ACCESS_KEY:}
 
   s3:
     landing_bucket: ${S3_LANDING_BUCKET:semiconductor-landing}
